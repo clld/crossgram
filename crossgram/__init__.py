@@ -34,8 +34,8 @@ def main(global_config, **settings):
         ('contributors', partial(menu_item, 'contributors')),
         ('units', partial(menu_item, 'units')),
         ('unitparameters', partial(menu_item, 'unitparameters', label='C-Parameters')),
-        ('languages', partial(menu_item, 'languages')),
         ('parameters', partial(menu_item, 'parameters', label='L-Parameters')),
+        ('languages', partial(menu_item, 'languages')),
         ('sentences', partial(menu_item, 'sentences')),
     )
 
