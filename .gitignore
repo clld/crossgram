@@ -1,0 +1,5 @@
+.coverage
+.tox
+*.py[co]
+__pycache__
+crossgram.egg-info

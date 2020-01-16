@@ -1,0 +1,66 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2019-12-12 11:50+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: crossgram/__init__.py:11
+msgid "Sentence"
+msgstr ""
+
+#: crossgram/__init__.py:12
+msgid "Sentences"
+msgstr ""
+
+#: crossgram/__init__.py:13
+msgid "Contributor"
+msgstr ""
+
+#: crossgram/__init__.py:14
+msgid "Contributors"
+msgstr ""
+
+#: crossgram/__init__.py:15
+msgid "Contribution"
+msgstr ""
+
+#: crossgram/__init__.py:16
+msgid "Contributions"
+msgstr ""
+
+#: crossgram/__init__.py:17
+msgid "Parameter"
+msgstr ""
+
+#: crossgram/__init__.py:18
+msgid "Parameters"
+msgstr ""
+
+#: crossgram/__init__.py:19
+msgid "Unit"
+msgstr ""
+
+#: crossgram/__init__.py:20
+msgid "Units"
+msgstr ""
+
+#: crossgram/__init__.py:21
+msgid "Unit Parameter"
+msgstr ""
+
+#: crossgram/__init__.py:22
+msgid "Unit Parameters"
+msgstr ""
