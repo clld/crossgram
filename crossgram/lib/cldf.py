@@ -85,19 +85,29 @@ def load_cldfbench(path):
     assert path.exists()
     cldf_path = path / 'cldf' / 'StructureDataset-metadata.json'
     md_path = path / 'metadata.json'
+    config_path = path / 'etc' / 'config.json'
 
     md = jsonlib.load(md_path) if md_path.exists() else {}
-    id_ = md.get('id', path.name)
+
+    config = jsonlib.load(config_path) if config_path.exists() else {}
+    authors = config.get('authors', ())
+
     cldf_dataset = StructureDataset.from_metadata(cldf_path)
-    return CLDFBenchSubmission(id_, md, cldf_dataset)
+
+    submission_id = (
+        md.get('id')
+        or cldf_dataset.properties.get('rc:ID')
+        or path.name)
+    return CLDFBenchSubmission(submission_id, cldf_dataset, md, authors)
 
 
 class CLDFBenchSubmission:
 
-    def __init__(self, sid, md, cldf):
+    def __init__(self, sid, cldf, md, authors):
         self.sid = sid
         self.md = md
         self.cldf = cldf
+        self.authors = authors
 
     def load(self, data=None):
         data = data or Data()
@@ -128,7 +138,7 @@ class CLDFBenchSubmission:
 
         DBSession.flush()
 
-        for i, spec in enumerate(self.md.get('authors', ())):
+        for i, spec in enumerate(self.authors):
             if not isinstance(spec, dict):
                 spec = {'name': spec}
             name = spec.get('name', '')
