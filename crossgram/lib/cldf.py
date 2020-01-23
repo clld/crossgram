@@ -6,23 +6,22 @@ from pycldf.dataset import StructureDataset
 
 from clld.db.meta import DBSession
 from clld.db.models import (
-    Contribution,
     ContributionContributor,
     Contributor,
     DomainElement,
     Language,
-    Parameter,
-    Sentence,
     Value,
     ValueSentence,
     ValueSet,
-    Unit,
     UnitDomainElement,
-    UnitParameter,
     UnitValue,
 )
 from crossgram.models import (
-    DataSetContrib,
+    CrossgramData,
+    Construction,
+    Example,
+    LParameter,
+    CParameter,
     UnitValueSentence,
 )
 
@@ -33,7 +32,6 @@ CONSTR_MAP = {
     'Description': 'description'}
 
 LANG_MAP = {
-    'ID': 'id',
     'Name': 'name',
     'Latitude': 'latitude',
     'Longitude': 'longitude'}
@@ -77,11 +75,12 @@ def _merge_field(pair):
         return k, '\t'.join(v)
     return k, v
 
+
 def _merge_glosses(col):
     return dict(map(_merge_field, col.items()))
 
 
-def load_cldfbench(path):
+def load_cldfbench(path, glottocode_index=None):
     assert path.exists()
     cldf_path = path / 'cldf' / 'StructureDataset-metadata.json'
     md_path = path / 'metadata.json'
@@ -97,7 +96,7 @@ def load_cldfbench(path):
     submission_id = (
         md.get('id')
         or cldf_dataset.properties.get('rc:ID')
-        or path.name)
+        or slug(path.name))
     return CLDFBenchSubmission(submission_id, cldf_dataset, md, authors)
 
 
@@ -109,31 +108,44 @@ class CLDFBenchSubmission:
         self.cldf = cldf
         self.authors = authors
 
-    def load(self, data=None):
+    def add_to_database(self, data=None, glottocode_index=None):
         data = data or Data()
         contrib = data.add(
-            DataSetContrib,
+            CrossgramData,
             self.sid,
             id=self.sid,
             name=self.md.get('title'),
             description=self.md.get('description'))
 
-        for language_row in self.cldf['LanguageTable']:
-            # TODO language ids should be glottocodes
-            id_ = language_row['ID']
+        if glottocode_index:
+            languages = list(map(glottocode_index.add_glottocode, languages))
+        else:
+            languages = self.cldf['LanguageTable']
+
+        for language_row in languages:
+            # TODO human-readable ids
+            id_ = language_row.get('ID')
             if id_ not in data['Language']:
-                data.add(Language, id_, **map_cols(LANG_MAP, language_row))
+                data.add(
+                    Language,
+                    id_,
+                    id=id_,
+                    **map_cols(LANG_MAP, language_row))
+
+        DBSession.flush()
 
         cparam_ids = {
             row['Parameter_ID']
-            for row in self.cldf['cvalues.csv']
+            for row in self.cldf.get('cvalues.csv', ())
             if 'Parameter_ID' in row}
 
-        for param_row in self.cldf['ParameterTable']:
+        for param_row in self.cldf.get('ParameterTable', ()):
+            # TODO human-readable ids with contrib prefix
             id_ = param_row['ID']
             data.add(
-                UnitParameter if id_ in cparam_ids else Parameter,
+                CParameter if id_ in cparam_ids else LParameter,
                 id_,
+                contribution=contrib,
                 **map_cols(PARAM_MAP, param_row))
 
         DBSession.flush()
@@ -161,52 +173,57 @@ class CLDFBenchSubmission:
                 contribution=contrib,
                 contributor=author)
 
-        for constr_row in self.cldf['constructions.csv']:
-            # TODO proper constr id
+        for constr_row in self.cldf.get('constructions.csv', ()):
+            # TODO human-readable ids with contrib prefix
             id_ = constr_row['ID']
             lang = data['Language'].get(constr_row['Language_ID'])
             data.add(
-                Unit,
+                Construction,
                 id_,
                 language=lang,
+                contribution=contrib,
                 **map_cols(CONSTR_MAP, constr_row))
 
         # TODO Check for missing/invalid refs
 
-        for code_row in self.cldf['CodeTable']:
+        for code_row in self.cldf.get('CodeTable', ()):
+            # TODO human-readable ids with contrib prefix
             id_ = code_row.get('ID')
             param_id = code_row['Parameter_ID']
             if param_id in cparam_ids:
-                param = data['UnitParameter'].get(param_id)
+                param = data['CParameter'].get(param_id)
                 data.add(
                     UnitDomainElement,
                     id_,
                     parameter=param,
                     **map_cols(CCODE_MAP, code_row))
             else:
-                param = data['Parameter'].get(param_id)
+                param = data['LParameter'].get(param_id)
                 data.add(
                     DomainElement,
                     id_,
                     parameter=param,
                     **map_cols(LCODE_MAP, code_row))
 
-        for example_row in self.cldf['ExampleTable']:
+        for example_row in self.cldf.get('ExampleTable', ()):
+            # TODO human-readable ids with contrib prefix
             id_ = example_row.get('ID')
             lang = data['Language'].get(example_row['Language_ID'])
             example_row = _merge_glosses(example_row)
             data.add(
-                Sentence,
+                Example,
                 id_,
                 language=lang,
+                contribution=contrib,
                 **map_cols(EXAMPLE_MAP, example_row))
 
         DBSession.flush()
 
-        for value_row in self.cldf['ValueTable']:
+        for value_row in self.cldf.get('ValueTable', ()):
+            # TODO human-readable ids with contrib prefix
             id_ = value_row.get('ID')
             lang = data['Language'].get(value_row['Language_ID'])
-            param = data['Parameter'].get(value_row['Parameter_ID'])
+            param = data['LParameter'].get(value_row['Parameter_ID'])
             code = data['DomainElement'].get(value_row['Code_ID'])
             if not lang or not param or not code:
                 # TODO warn about this
@@ -231,10 +248,11 @@ class CLDFBenchSubmission:
                 if example:
                     ValueSentence(value=value, sentence=example)
 
-        for cvalue_row in self.cldf['cvalues.csv']:
+        for cvalue_row in self.cldf.get('cvalues.csv', ()):
+            # TODO human-readable ids with contrib prefix
             id_ = cvalue_row.get('ID')
-            constr = data['Unit'].get(cvalue_row['Construction_ID'])
-            param = data['UnitParameter'].get(cvalue_row['Parameter_ID'])
+            constr = data['Construction'].get(cvalue_row['Construction_ID'])
+            param = data['CParameter'].get(cvalue_row['Parameter_ID'])
             code = data['UnitDomainElement'].get(cvalue_row['Code_ID'])
             if not constr or not param or not code:
                 # TODO warn about this

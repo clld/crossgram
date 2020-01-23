@@ -30,16 +30,16 @@ ${util.data()}
             </div>
         </div>
         <div id="constr" class="tab-pane">
-            ${request.get_datatable('units', h.models.Unit, contribution=ctx).render()}
+            ${request.get_datatable('units', h.models.Unit, crossgramdata=ctx).render()}
         </div>
         <div id="cparams" class="tab-pane">
-            ${request.get_datatable('unitparameters', h.models.UnitParameter, contribution=ctx).render()}
+            ${request.get_datatable('unitparameters', h.models.UnitParameter, crossgramdata=ctx).render()}
         </div>
         <div id="lparams" class="tab-pane">
-            ${request.get_datatable('parameters', h.models.Parameter, contribution=ctx).render()}
+            ${request.get_datatable('parameters', h.models.Parameter, crossgramdata=ctx).render()}
         </div>
         <div id="examples" class="tab-pane">
-            ${request.get_datatable('sentences', h.models.Sentence, contribution=ctx).render()}
+            ${request.get_datatable('sentences', h.models.Sentence, crossgramdata=ctx).render()}
         </div>
     </div>
 

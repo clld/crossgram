@@ -1,4 +1,6 @@
 from __future__ import unicode_literals
+
+import pathlib
 import sys
 
 from datetime import date
@@ -10,6 +12,7 @@ from clld.db.models import common
 import crossgram
 from crossgram import models
 from crossgram.lib.cldf import load_cldfbench
+from crossgram.lib.glottocode import make_glottocode_index
 
 
 def main(args):
@@ -36,12 +39,23 @@ def main(args):
         common.Editor(dataset=dataset, contributor=ed, ord=i + 1)
     DBSession.add(dataset)
 
-    import pathlib
-    repo_path = pathlib.Path.home() / 'desktop' / 'comparison'
-    submission = load_cldfbench(repo_path)
-    #print(submission.cldf.sources)
+    # TODO less hard-coding of paths etc.
+
+    print('Building glottocode index...', end='')
+    glottocode_index = make_glottocode_index(
+        pathlib.Path.home() / 'repos' / 'glottolog' / 'glottolog')
+    print('done.')
+
     data = Data()
-    submission.load(data)
+
+    for repo_path in (
+        pathlib.Path.home() / 'repos' / 'crossgram' / 'comparison',
+        pathlib.Path.home() / 'repos' / 'cldf-datasets' / 'petersonsouthasia',
+    ):
+        print("Loading submission '{}'...".format(repo_path), end='')
+        submission = load_cldfbench(repo_path, glottocode_index)
+        submission.add_to_database(data)
+        print('done.')
 
 
 def prime_cache(args):

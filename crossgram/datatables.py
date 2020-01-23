@@ -4,6 +4,12 @@ from clld.db.models import common
 from clld.web import datatables
 from clld.web.datatables.base import DataTable
 from clld.web.datatables.contributor import NameCol, ContributionsCol, AddressCol
+# from clld.web.datatables.parameter import Parameters
+# from clld.web.datatables.sentence import Sentences
+# from clld.web.datatables.unit import Units
+# from clld.web.datatables.unitparameter import Unitparameters
+
+from crossgram import models
 
 
 class ContributionContributors(DataTable):
@@ -20,5 +26,53 @@ class ContributionContributors(DataTable):
         ]
 
 
+class Constructions(datatables.Units):
+
+    __constraints__ = [common.Language, models.CrossgramData]
+
+    def base_query(self, query):
+        query = super().base_query(query)
+        if self.crossgramdata:
+            query = query.filter(models.Construction.contribution == self.crossgramdata)
+        return query
+
+
+class CParameters(datatables.Unitparameters):
+
+    __constraints__ = [models.CrossgramData]
+
+    def base_query(self, query):
+        query = super().base_query(query)
+        if self.crossgramdata:
+            query = query.filter(models.CParameter.contribution == self.crossgramdata)
+        return query
+
+
+class LParameters(datatables.Parameters):
+
+    __constraints__ = [models.CrossgramData]
+
+    def base_query(self, query):
+        query = super().base_query(query)
+        if self.crossgramdata:
+            query = query.filter(models.LParameter.contribution == self.crossgramdata)
+        return query
+
+
+class Examples(datatables.Sentences):
+
+    __constraints__ = [common.Parameter, common.Language, models.CrossgramData]
+
+    def base_query(self, query):
+        query = super().base_query(query)
+        if self.crossgramdata:
+            query = query.filter(models.Example.contribution == self.crossgramdata)
+        return query
+
+
 def includeme(config):
     config.register_datatable('contributors', ContributionContributors)
+    config.register_datatable('parameters', LParameters)
+    config.register_datatable('sentences', Examples)
+    config.register_datatable('unitparameters', CParameters)
+    config.register_datatable('units', Constructions)

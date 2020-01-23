@@ -17,11 +17,15 @@ from clld import interfaces
 from clld.db.meta import Base, CustomModelMixin
 from clld.db.models.common import (
     Contribution,
+    Parameter,
+    Sentence,
+    Unit,
+    UnitParameter,
 )
 
 
 @implementer(interfaces.IContribution)
-class DataSetContrib(CustomModelMixin, Contribution):
+class CrossgramData(CustomModelMixin, Contribution):
     pk = Column(Integer, ForeignKey('contribution.pk'), primary_key=True)
     number = Column(Integer)
     published = Column(Date)
@@ -38,6 +42,34 @@ class DataSetContrib(CustomModelMixin, Contribution):
             return external_link(
                 'https://doi.org/{0.doi}'.format(self), label='DOI: {0.doi}'.format(self))
         return ''
+
+
+@implementer(interfaces.IUnit)
+class Construction(CustomModelMixin, Unit):
+    pk = Column(Integer, ForeignKey('unit.pk'), primary_key=True)
+    contribution_pk = Column(Integer, ForeignKey('contribution.pk'))
+    contribution = relationship(CrossgramData, backref='constructions')
+
+
+@implementer(interfaces.IUnitParameter)
+class CParameter(CustomModelMixin, UnitParameter):
+    pk = Column(Integer, ForeignKey('unitparameter.pk'), primary_key=True)
+    contribution_pk = Column(Integer, ForeignKey('contribution.pk'))
+    contribution = relationship(CrossgramData, backref='cparameters')
+
+
+@implementer(interfaces.IParameter)
+class LParameter(CustomModelMixin, Parameter):
+    pk = Column(Integer, ForeignKey('parameter.pk'), primary_key=True)
+    contribution_pk = Column(Integer, ForeignKey('contribution.pk'))
+    contribution = relationship(CrossgramData, backref='lparameters')
+
+
+@implementer(interfaces.ISentence)
+class Example(CustomModelMixin, Sentence):
+    pk = Column(Integer, ForeignKey('sentence.pk'), primary_key=True)
+    contribution_pk = Column(Integer, ForeignKey('contribution.pk'))
+    contribution = relationship(CrossgramData, backref='examples')
 
 
 class UnitValueSentence(Base):
