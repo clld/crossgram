@@ -75,7 +75,7 @@ def _merge_glosses(col):
     return dict(map(_merge_field, col.items()))
 
 
-def load_cldfbench(path, glottocode_index=None):
+def load_cldfbench(path):
     assert path.exists()
     cldf_path = path / 'cldf' / 'StructureDataset-metadata.json'
     md_path = path / 'metadata.json'
@@ -103,8 +103,7 @@ class CLDFBenchSubmission:
         self.cldf = cldf
         self.authors = authors
 
-    def add_to_database(self, data=None, glottocode_index=None):
-        data = data or Data()
+    def add_to_database(self, data, language_id_map):
         contrib = data.add(
             CrossgramData,
             self.sid,
@@ -112,22 +111,17 @@ class CLDFBenchSubmission:
             name=self.md.get('title'),
             description=self.md.get('description'))
 
-        if glottocode_index:
-            languages = list(map(glottocode_index.add_glottocode, languages))
-        else:
-            languages = self.cldf['LanguageTable']
-
-        for language_row in languages:
-            # TODO use something more stable to determine duplicate languages
-            #  => Glottocode
-            id_ = language_row.get('ID')
-            if not id_:
+        for language_row in self.cldf['LanguageTable']:
+            old_id = language_row.get('ID')
+            if not old_id:
                 continue
-            if id_ not in data['Language']:
+            new_id = language_row.get('Glottocode') or old_id
+            language_id_map[old_id] = new_id
+            if new_id not in data['Language']:
                 data.add(
                     Language,
-                    id_,
-                    id=id_,
+                    new_id,
+                    id=new_id,
                     **map_cols(LANG_MAP, language_row))
 
         DBSession.flush()
@@ -160,7 +154,8 @@ class CLDFBenchSubmission:
             if not old_id:
                 continue
             new_id = '{}-{}'.format(contrib.id, old_id)
-            lang = data['Language'].get(constr_row['Language_ID'])
+            lang_new_id = language_id_map.get(constr_row['Language_ID'])
+            lang = data['Language'].get(lang_new_id)
             data.add(
                 Construction,
                 old_id,
@@ -215,7 +210,8 @@ class CLDFBenchSubmission:
 
         for example_row in self.cldf.get('ExampleTable', ()):
             old_id = example_row.get('ID')
-            lang = data['Language'].get(example_row['Language_ID'])
+            lang_new_id = language_id_map.get(example_row['Language_ID'])
+            lang = data['Language'].get(lang_new_id)
             if not old_id or not lang:
                 continue
             new_id = '{}-{}'.format(contrib.id, old_id)
@@ -232,7 +228,8 @@ class CLDFBenchSubmission:
 
         for value_row in self.cldf.get('ValueTable', ()):
             old_id = value_row.get('ID')
-            lang = data['Language'].get(value_row['Language_ID'])
+            lang_new_id = language_id_map.get(value_row['Language_ID'])
+            lang = data['Language'].get(lang_new_id)
             param = data['LParameter'].get(value_row['Parameter_ID'])
             code = data['DomainElement'].get(value_row['Code_ID'])
             if not old_id or not lang or not param or not code:
