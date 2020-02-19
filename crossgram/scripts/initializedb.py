@@ -41,20 +41,16 @@ def main(args):
 
     # TODO less hard-coding of paths etc.
 
-    print('Building glottocode index...', end='')
-    glottocode_index = make_glottocode_index(
-        pathlib.Path.home() / 'repos' / 'glottolog' / 'glottolog')
-    print('done.')
-
     data = Data()
 
+    language_id_map = {}
     for repo_path in (
         pathlib.Path.home() / 'repos' / 'crossgram' / 'comparison',
         pathlib.Path.home() / 'repos' / 'cldf-datasets' / 'petersonsouthasia',
     ):
         print("Loading submission '{}'...".format(repo_path), end='')
-        submission = load_cldfbench(repo_path, glottocode_index)
-        submission.add_to_database(data)
+        submission = load_cldfbench(repo_path)
+        submission.add_to_database(data, language_id_map)
         print('done.')
 
 
