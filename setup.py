@@ -20,6 +20,7 @@ setup(
     zip_safe=False,
     install_requires=[
         'clld',
+        'psycopg2',
     ],
     extras_require={
         'dev': ['flake8', 'waitress'],
