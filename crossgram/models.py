@@ -19,6 +19,7 @@ from clld.db.models.common import (
     Contribution,
     Parameter,
     Sentence,
+    Source,
     Unit,
     UnitParameter,
 )
@@ -72,9 +73,24 @@ class Example(CustomModelMixin, Sentence):
     contribution = relationship(CrossgramData, backref='examples')
 
 
+class UnitValueReference(Base):
+
+    unitvalue_pk = Column(Integer, ForeignKey('unitvalue.pk'))
+    source_pk = Column(Integer, ForeignKey('source.pk'))
+    unitvalue = relationship('UnitValue', backref='source_assocs')
+    source = relationship('Source', backref='unitvalue_assocs')
+
+
 class UnitValueSentence(Base):
 
     unitvalue_pk = Column(Integer, ForeignKey('unitvalue.pk'))
     sentence_pk = Column(Integer, ForeignKey('sentence.pk'))
     unitvalue = relationship('UnitValue', backref='sentence_assocs')
     sentence = relationship('Sentence', backref='unitvalue_assocs')
+
+
+@implementer(interfaces.ISource)
+class CrossgramDataSource(CustomModelMixin, Source):
+    pk = Column(Integer, ForeignKey('source.pk'), primary_key=True)
+    contribution_pk = Column(Integer, ForeignKey('contribution.pk'))
+    contribution = relationship(CrossgramData, backref='sources')

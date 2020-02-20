@@ -1,4 +1,7 @@
-from clld.scripts.util import Data
+import re
+
+from clld.scripts.util import Data, bibtex2source
+from clld.lib import bibtex
 from clldutils import jsonlib
 from clldutils.misc import slug
 from nameparser import HumanName
@@ -10,11 +13,13 @@ from clld.db.models import (
     Contributor,
     DomainElement,
     Language,
+    UnitDomainElement,
+    UnitValue,
+    SentenceReference,
     Value,
     ValueSentence,
     ValueSet,
-    UnitDomainElement,
-    UnitValue,
+    ValueSetReference,
 )
 from crossgram.models import (
     CrossgramData,
@@ -23,6 +28,8 @@ from crossgram.models import (
     LParameter,
     CParameter,
     UnitValueSentence,
+    UnitValueReference,
+    CrossgramDataSource,
 )
 
 
@@ -80,6 +87,7 @@ def load_cldfbench(path):
     cldf_path = path / 'cldf' / 'StructureDataset-metadata.json'
     md_path = path / 'metadata.json'
     config_path = path / 'etc' / 'config.json'
+    bib_path = path / 'cldf' / 'sources.bib'
 
     md = jsonlib.load(md_path) if md_path.exists() else {}
 
@@ -87,21 +95,24 @@ def load_cldfbench(path):
     authors = config.get('authors', ())
 
     cldf_dataset = StructureDataset.from_metadata(cldf_path)
+    sources = bibtex.Database.from_file(bib_path) if bib_path.exists() else None
 
     submission_id = (
         md.get('id')
         or cldf_dataset.properties.get('rc:ID')
         or slug(path.name))
-    return CLDFBenchSubmission(submission_id, cldf_dataset, md, authors)
+    return CLDFBenchSubmission(
+        submission_id, cldf_dataset, md, authors, sources)
 
 
 class CLDFBenchSubmission:
 
-    def __init__(self, sid, cldf, md, authors):
+    def __init__(self, sid, cldf, md, authors, sources):
         self.sid = sid
         self.md = md
         self.cldf = cldf
         self.authors = authors
+        self.sources = sources
 
     def add_to_database(self, data, language_id_map):
         contrib = data.add(
@@ -143,11 +154,21 @@ class CLDFBenchSubmission:
                     url=spec.get('url'),
                     email=spec.get('email'))
                 DBSession.flush()
-            ContributionContributor(
+            DBSession.add(ContributionContributor(
                 ord=i + 1,
                 primary=spec.get('primary', True),
                 contribution=contrib,
-                contributor=author)
+                contributor=author))
+
+        biblio_map = {}
+        if self.sources:
+            for bibrecord in self.sources.records:
+                source = bibtex2source(bibrecord, CrossgramDataSource)
+                old_id = bibrecord.id
+                new_id = '{}-{}'.format(contrib.id, old_id)
+                source.id = new_id
+                source.contribution = contrib
+                biblio_map[old_id] = source
 
         for constr_row in self.cldf.get('constructions.csv', ()):
             old_id = constr_row.get('ID')
@@ -180,8 +201,6 @@ class CLDFBenchSubmission:
                 contribution=contrib,
                 id=new_id,
                 **map_cols(PARAM_MAP, param_row))
-
-        # TODO Check for missing/invalid refs
 
         DBSession.flush()
 
@@ -216,13 +235,27 @@ class CLDFBenchSubmission:
                 continue
             new_id = '{}-{}'.format(contrib.id, old_id)
             example_row = _merge_glosses(example_row)
-            data.add(
+            example = data.add(
                 Example,
                 old_id,
                 language=lang,
                 contribution=contrib,
                 id=new_id,
                 **map_cols(EXAMPLE_MAP, example_row))
+
+            DBSession.flush()
+            # FIXME does not work
+            #  Idea 1: mabe Source is not an array here?
+            source_string = example_row.get('Source')
+            if source_string:
+                match = re.fullmatch(r'([^[]+)(\[[^]]*\])?', source_string)
+                if not match or not match.group(1):
+                    continue
+                source = biblio_map.get(match.group(1))
+                if source:
+                    DBSession.add(SentenceReference(
+                            sentence_pk=example.pk,
+                            source_pk=source.pk))
 
         DBSession.flush()
 
@@ -249,11 +282,20 @@ class CLDFBenchSubmission:
                 Value, old_id,
                 id=new_id, name=name, valueset=valueset, domainelement=code)
 
+            for source_string in sorted(set(value_row.get('Source') or ())):
+                match = re.fullmatch(r'([^[]+)(\[[^]]*\])?', source_string)
+                if not match or not match.group(1):
+                    continue
+                source = biblio_map.get(match.group(1))
+                if source:
+                    DBSession.add(ValueSetReference(
+                        valueset=valueset, source_pk=source.pk))
+
             DBSession.flush()
             for ex_id in set(value_row.get('Example_IDs', ())):
-                example = data['Sentence'].get(ex_id)
+                example = data['Example'].get(ex_id)
                 if example:
-                    ValueSentence(value=value, sentence=example)
+                    DBSession.add(ValueSentence(value=value, sentence=example))
 
         for cvalue_row in self.cldf.get('cvalues.csv', ()):
             old_id = cvalue_row.get('ID')
@@ -273,7 +315,17 @@ class CLDFBenchSubmission:
                 unitparameter=param, unitdomainelement=code)
 
             DBSession.flush()
-            for ex_id in set(cvalue_row.get('Example_IDs', ())):
-                example = data['Sentence'].get(ex_id)
+            for ex_id in sorted(set(cvalue_row.get('Example_IDs') or ())):
+                example = data['Example'].get(ex_id)
                 if example:
-                    UnitValueSentence(unitvalue=cvalue, sentence=example)
+                    DBSession.add(UnitValueSentence(
+                        unitvalue=cvalue, sentence=example))
+
+            for source_string in sorted(set(cvalue_row.get('Source') or ())):
+                match = re.fullmatch(r'([^[]+)(\[[^]]*\])?', source_string)
+                if not match or not match.group(1):
+                    continue
+                source = biblio_map.get(match.group(1))
+                if source:
+                    DBSession.add(UnitValueReference(
+                        unitvalue=cvalue, source_pk=source.pk))

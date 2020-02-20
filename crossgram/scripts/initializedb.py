@@ -12,7 +12,6 @@ from clld.db.models import common
 import crossgram
 from crossgram import models
 from crossgram.lib.cldf import load_cldfbench
-from crossgram.lib.glottocode import make_glottocode_index
 
 
 def main(args):
