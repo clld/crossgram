@@ -13,7 +13,12 @@ ${util.data()}
         <li><a href="#constr" data-toggle="tab">${_('Units')}</a></li>
         <li><a href="#cparams" data-toggle="tab">${_('Unit Parameters')}</a></li>
         <li><a href="#lparams" data-toggle="tab">${_('Parameters')}</a></li>
+        % if ctx.examples:
         <li><a href="#examples" data-toggle="tab">${_('Sentences')}</a></li>
+        % endif
+        % if ctx.sources:
+        <li><a href="#sources" data-toggle="tab">${_('Sources')}</a></li>
+        % endif
     </ul>
 
     <div class="tab-content">
@@ -38,9 +43,16 @@ ${util.data()}
         <div id="lparams" class="tab-pane">
             ${request.get_datatable('parameters', h.models.Parameter, crossgramdata=ctx).render()}
         </div>
+        % if ctx.examples:
         <div id="examples" class="tab-pane">
             ${request.get_datatable('sentences', h.models.Sentence, crossgramdata=ctx).render()}
         </div>
+        % endif
+        % if ctx.sources:
+        <div id="sources" class="tab-pane">
+            ${request.get_datatable('sources', h.models.Source, crossgramdata=ctx).render()}
+        </div>
+        % endif
     </div>
 
     <script>
