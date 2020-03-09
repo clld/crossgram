@@ -2,11 +2,11 @@ from clld.db.meta import DBSession
 from clld.db.models import common
 
 from clld.web import datatables
-from clld.web.datatables.base import DataTable
+from clld.web.datatables.base import DataTable, LinkCol
 from clld.web.datatables.contributor import NameCol, ContributionsCol, AddressCol
 # from clld.web.datatables.parameter import Parameters
 # from clld.web.datatables.sentence import Sentences
-# from clld.web.datatables.unit import Units
+from clld.web.datatables.unit import DescriptionLinkCol
 # from clld.web.datatables.unitparameter import Unitparameters
 
 from crossgram import models
@@ -35,6 +35,16 @@ class Constructions(datatables.Units):
         if self.crossgramdata:
             query = query.filter(models.Construction.contribution == self.crossgramdata)
         return query
+
+    def col_defs(self):
+        cols = super().col_defs()
+        if not self.crossgramdata:
+            cols.append(LinkCol(
+                self,
+                'contribution',
+                model_col=models.CrossgramData.name,
+                get_obj=lambda i: i.contribution))
+        return cols
 
 
 class CParameters(datatables.Unitparameters):
