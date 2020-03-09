@@ -1,1 +1,5 @@
-
+/* Data tables are just a tiny bit too wide for the tab-content div,
+   which makes it scroll horizontally in Firefox. */
+div.tab-content table.dataTable {
+    width: 99.5%;
+}
