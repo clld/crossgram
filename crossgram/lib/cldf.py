@@ -126,9 +126,20 @@ class CLDFBenchSubmission:
             old_id = language_row.get('ID')
             if not old_id:
                 continue
-            new_id = language_row.get('Glottocode') or old_id
+
+            # Apparently some datasets contain multiple languages sharing the
+            # same Glottocode...  So try and use the name to distinguish them
+            id_candidate = language_row.get('Glottocode') or old_id
+            number = 1
+            new_id = id_candidate
+            lang = data['Language'].get(new_id)
+            while lang and slug(lang.name) != slug(language_row.get('Name')):
+                number += 1
+                new_id = '{}-{}'.format(id_candidate, number)
+                lang = data['Language'].get(new_id)
+
             language_id_map[old_id] = new_id
-            if new_id not in data['Language']:
+            if not lang:
                 data.add(
                     Language,
                     new_id,
