@@ -78,6 +78,16 @@ class LParameters(datatables.Parameters):
             query = query.filter(models.LParameter.contribution == self.crossgramdata)
         return query
 
+    def col_defs(self):
+        cols = super().col_defs()
+        if not self.crossgramdata:
+            cols.append(LinkCol(
+                self,
+                'contribution',
+                model_col=models.CrossgramData.name,
+                get_obj=lambda i: i.contribution))
+        return cols
+
 
 class Examples(datatables.Sentences):
 
