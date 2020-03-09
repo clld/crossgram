@@ -10,14 +10,20 @@ ${util.data()}
 
     <ul class="nav nav-tabs">
         <li class="active"><a href="#about" data-toggle="tab">Introduction</a></li>
-        <li><a href="#constr" data-toggle="tab">${_('Units')}</a></li>
-        <li><a href="#cparams" data-toggle="tab">${_('Unit Parameters')}</a></li>
-        <li><a href="#lparams" data-toggle="tab">${_('Parameters')}</a></li>
+        % if ctx.constructions:
+            <li><a href="#constr" data-toggle="tab">${_('Units')}</a></li>
+        % endif
+        % if ctx.cparameters:
+            <li><a href="#cparams" data-toggle="tab">${_('Unit Parameters')}</a></li>
+        % endif
+        % if ctx.lparameters:
+            <li><a href="#lparams" data-toggle="tab">${_('Parameters')}</a></li>
+        % endif
         % if ctx.examples:
-        <li><a href="#examples" data-toggle="tab">${_('Sentences')}</a></li>
+            <li><a href="#examples" data-toggle="tab">${_('Sentences')}</a></li>
         % endif
         % if ctx.sources:
-        <li><a href="#sources" data-toggle="tab">${_('Sources')}</a></li>
+            <li><a href="#sources" data-toggle="tab">${_('Sources')}</a></li>
         % endif
     </ul>
 
@@ -34,15 +40,21 @@ ${util.data()}
                 </div>
             </div>
         </div>
+        % if ctx.constructions:
         <div id="constr" class="tab-pane">
             ${request.get_datatable('units', h.models.Unit, crossgramdata=ctx).render()}
         </div>
+        % endif
+        % if ctx.cparameters:
         <div id="cparams" class="tab-pane">
             ${request.get_datatable('unitparameters', h.models.UnitParameter, crossgramdata=ctx).render()}
         </div>
+        % endif
+        % if ctx.lparameters:
         <div id="lparams" class="tab-pane">
             ${request.get_datatable('parameters', h.models.Parameter, crossgramdata=ctx).render()}
         </div>
+        % endif
         % if ctx.examples:
         <div id="examples" class="tab-pane">
             ${request.get_datatable('sentences', h.models.Sentence, crossgramdata=ctx).render()}
