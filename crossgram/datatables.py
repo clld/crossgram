@@ -2,7 +2,7 @@ from clld.db.meta import DBSession
 from clld.db.models import common
 
 from clld.web import datatables
-from clld.web.datatables.base import DataTable, LinkCol
+from clld.web.datatables.base import DataTable, DetailsRowLinkCol, LinkCol
 from clld.web.datatables.contributor import NameCol, ContributionsCol, AddressCol
 # from clld.web.datatables.parameter import Parameters
 # from clld.web.datatables.sentence import Sentences
@@ -58,7 +58,9 @@ class CParameters(datatables.Unitparameters):
         return query
 
     def col_defs(self):
-        cols = super().col_defs()
+        cols = [
+            DetailsRowLinkCol(self, 'd'),
+            LinkCol(self, 'name')]
         if not self.crossgramdata:
             cols.append(LinkCol(
                 self,
