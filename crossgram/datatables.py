@@ -82,11 +82,25 @@ class CValues(datatables.Unitvalues):
         return q
 
     def col_defs(self):
-        name_col = UnitValueNameCol(self, 'value')
-        constr_col = LinkCol(
-            self, 'unit', get_obj=lambda i: i.unit, model_col=common.Unit.name)
-        refs_col = RefsCol(self, 'source')
-        return [constr_col, name_col, refs_col]
+        cols = [
+            LinkCol(
+                self, 'unit',
+                get_obj=lambda i: i.unit, model_col=common.Unit.name),
+            UnitValueNameCol(self, 'value'),
+            RefsCol(self, 'source')]
+        if not self.unitparameter:
+            cols.insert(0, LinkCol(
+                self, 'unitparameter',
+                model_col=models.CParameter.name,
+                get_obj=lambda i: i.unitparameter,
+                sTitle='Construction Parameter'))
+            if not self.contribution:
+                cols.append(LinkCol(
+                    self,
+                    'contribution',
+                    model_col=models.CrossgramData.name,
+                    get_obj=lambda i: i.contribution))
+        return cols
 
 
 class LParameters(datatables.Parameters):
@@ -121,6 +135,29 @@ class Examples(datatables.Sentences):
         return query
 
 
+class Sources(datatables.Sources):
+
+    __constraints__ = [common.Language, models.CrossgramData]
+
+    def base_query(self, query):
+        query = super().base_query(query)
+        if self.crossgramdata:
+            # FIXME Sorting by contribution throws an error
+            query = query\
+                .join(models.CrossgramDataSource)\
+                .filter(models.CrossgramDataSource.contribution == self.crossgramdata)
+        return query
+
+    def col_defs(self):
+        cols = super().col_defs()
+        if not self.crossgramdata:
+            cols.append(LinkCol(
+                self,
+                'contribution',
+                model_col=models.CrossgramData.name,
+                get_obj=lambda i: i.contribution))
+        return cols
+
 def includeme(config):
     config.register_datatable('contributors', ContributionContributors)
     config.register_datatable('parameters', LParameters)
@@ -128,3 +165,4 @@ def includeme(config):
     config.register_datatable('unitparameters', CParameters)
     config.register_datatable('units', Constructions)
     config.register_datatable('unitvalues', CValues)
+    config.register_datatable('sources', Sources)
