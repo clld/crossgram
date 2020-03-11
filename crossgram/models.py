@@ -22,7 +22,9 @@ from clld.db.models.common import (
     Source,
     Unit,
     UnitParameter,
+    UnitValue,
 )
+from clld.db.models.source import HasSourceNotNullMixin
 
 
 @implementer(interfaces.IContribution)
@@ -73,12 +75,12 @@ class Example(CustomModelMixin, Sentence):
     contribution = relationship(CrossgramData, backref='examples')
 
 
-class UnitValueReference(Base):
+class UnitValueReference(Base, HasSourceNotNullMixin):
 
-    unitvalue_pk = Column(Integer, ForeignKey('unitvalue.pk'))
-    source_pk = Column(Integer, ForeignKey('source.pk'))
-    unitvalue = relationship('UnitValue', backref='source_assocs')
-    source = relationship('Source', backref='unitvalue_assocs')
+    __table_args__ = (UniqueConstraint('unitvalue_pk', 'source_pk', 'description'),)
+
+    unitvalue_pk = Column(Integer, ForeignKey('unitvalue.pk'), nullable=False)
+    unitvalue = relationship(UnitValue, innerjoin=True, backref="references")
 
 
 class UnitValueSentence(Base):
