@@ -62,7 +62,8 @@ class CParameters(datatables.Unitparameters):
     def col_defs(self):
         cols = [
             DetailsRowLinkCol(self, 'd'),
-            LinkCol(self, 'name')]
+            LinkCol(self, 'name'),
+            Col(self, 'description')]
         if not self.crossgramdata:
             cols.append(LinkCol(
                 self,
