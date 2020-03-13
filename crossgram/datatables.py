@@ -5,7 +5,7 @@ from clld.db.models import common
 
 from clld.web import datatables
 from clld.web.datatables.base import (
-    DataTable, DetailsRowLinkCol, LinkCol, RefsCol,
+    Col, DataTable, DetailsRowLinkCol, LinkCol, RefsCol,
 )
 from clld.web.datatables.contributor import NameCol, ContributionsCol, AddressCol
 from clld.web.datatables.unit import DescriptionLinkCol
@@ -114,7 +114,11 @@ class LParameters(datatables.Parameters):
         return query
 
     def col_defs(self):
-        cols = super().col_defs()
+        cols = [
+            DetailsRowLinkCol(self, 'd'),
+            LinkCol(self, 'name'),
+            Col(self, 'description')
+        ]
         if not self.crossgramdata:
             cols.append(LinkCol(
                 self,
