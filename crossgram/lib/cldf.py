@@ -1,3 +1,4 @@
+from datetime import date
 import pathlib
 import re
 
@@ -85,8 +86,10 @@ def _merge_glosses(col):
 
 class CLDFBenchSubmission:
 
-    def __init__(self, sid, cldf, md, authors, sources):
+    def __init__(self, sid, number, published, cldf, md, authors, sources):
         self.sid = sid
+        self.number = number
+        self.published = published
         self.md = md
         self.cldf = cldf
         self.authors = authors
@@ -97,6 +100,8 @@ class CLDFBenchSubmission:
             CrossgramData,
             self.sid,
             id=self.sid,
+            number=self.number,
+            published=self.published,
             name=self.md.get('title'),
             description=self.md.get('description'))
 
@@ -341,5 +346,8 @@ class CLDFBenchSubmission:
             or md.get('id')
             or cldf_dataset.properties.get('rc:ID')
             or slug(path.name))
+        number = int(contrib_md['number'])
+        published = date.fromisoformat(contrib_md['published'])
         return cls(
-            submission_id, cldf_dataset, md, authors, sources)
+            submission_id, number, published, cldf_dataset, md, authors,
+            sources)
