@@ -12,7 +12,7 @@ from clldutils import jsonlib
 
 import crossgram
 from crossgram import models
-from crossgram.lib.cldf import load_cldfbench
+from crossgram.lib.cldf import CLDFBenchSubmission
 
 
 def main(args):
@@ -44,7 +44,7 @@ def main(args):
     for contrib in jsonlib.load('contributions.json')['contributions']:
         print('Loading submission', contrib['id'], '...')
         contrib_path = pathlib.Path(contrib['repo'])
-        submission = load_cldfbench(contrib_path)
+        submission = CLDFBenchSubmission.load(contrib_path)
         submission.add_to_database(data, language_id_map)
         print('... done')
 

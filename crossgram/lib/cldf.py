@@ -82,29 +82,6 @@ def _merge_glosses(col):
     return dict(map(_merge_field, col.items()))
 
 
-def load_cldfbench(path):
-    assert path.exists()
-    cldf_path = path / 'cldf' / 'StructureDataset-metadata.json'
-    md_path = path / 'metadata.json'
-    config_path = path / 'etc' / 'config.json'
-    bib_path = path / 'cldf' / 'sources.bib'
-
-    md = jsonlib.load(md_path) if md_path.exists() else {}
-
-    config = jsonlib.load(config_path) if config_path.exists() else {}
-    authors = config.get('authors', ())
-
-    cldf_dataset = StructureDataset.from_metadata(cldf_path)
-    sources = bibtex.Database.from_file(bib_path) if bib_path.exists() else None
-
-    submission_id = (
-        md.get('id')
-        or cldf_dataset.properties.get('rc:ID')
-        or slug(path.name))
-    return CLDFBenchSubmission(
-        submission_id, cldf_dataset, md, authors, sources)
-
-
 class CLDFBenchSubmission:
 
     def __init__(self, sid, cldf, md, authors, sources):
@@ -340,3 +317,26 @@ class CLDFBenchSubmission:
                 if source:
                     DBSession.add(UnitValueReference(
                         unitvalue=cvalue, source_pk=source.pk))
+
+    @classmethod
+    def load(cls, path):
+        assert path.exists()
+        cldf_path = path / 'cldf' / 'StructureDataset-metadata.json'
+        md_path = path / 'metadata.json'
+        config_path = path / 'etc' / 'config.json'
+        bib_path = path / 'cldf' / 'sources.bib'
+
+        md = jsonlib.load(md_path) if md_path.exists() else {}
+
+        config = jsonlib.load(config_path) if config_path.exists() else {}
+        authors = config.get('authors', ())
+
+        cldf_dataset = StructureDataset.from_metadata(cldf_path)
+        sources = bibtex.Database.from_file(bib_path) if bib_path.exists() else None
+
+        submission_id = (
+            md.get('id')
+            or cldf_dataset.properties.get('rc:ID')
+            or slug(path.name))
+        return cls(
+            submission_id, cldf_dataset, md, authors, sources)
