@@ -7,11 +7,36 @@ from clld.web import datatables
 from clld.web.datatables.base import (
     Col, DataTable, DetailsRowLinkCol, LinkCol, RefsCol,
 )
+from clld.web.datatables.contribution import ContributorsCol, CitationCol
 from clld.web.datatables.contributor import NameCol, ContributionsCol, AddressCol
 from clld.web.datatables.unit import DescriptionLinkCol
 from clld.web.datatables.unitvalue import UnitValueNameCol
 
 from crossgram import models
+
+
+class NumberCol(Col):
+    __kw__ = {
+        'input_size': 'mini',
+        'sClass': 'right',
+        'sTitle': 'No.',
+        'bSearchable': False}
+
+
+class DateCol(Col):
+    __kw__ = {'bSearchable': False}
+
+
+class CrossgramDatasets(DataTable):
+
+    def col_defs(self):
+        return [
+            NumberCol(self, 'number'),
+            LinkCol(self, 'name'),
+            ContributorsCol(self, 'contributor'),
+            DateCol(self, 'published'),
+            CitationCol(self, 'cite'),
+        ]
 
 
 class ContributionContributors(DataTable):
@@ -164,6 +189,7 @@ class Sources(datatables.Sources):
         return cols
 
 def includeme(config):
+    config.register_datatable('contributions', CrossgramDatasets)
     config.register_datatable('contributors', ContributionContributors)
     config.register_datatable('parameters', LParameters)
     config.register_datatable('sentences', Examples)
