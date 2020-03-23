@@ -41,10 +41,9 @@ def main(args):
 
     data = Data()
     language_id_map = {}
-    for config in jsonlib.load('contributions.json')['contributions']:
-        print('Loading submission', config['id'], '...')
-        contrib_path = pathlib.Path(config['repo'])
-        submission = CLDFBenchSubmission.load(contrib_path)
+    for contrib_md in jsonlib.load('contributions.json')['contributions']:
+        print('Loading submission', contrib_md['id'], '...')
+        submission = CLDFBenchSubmission.load(contrib_md)
         submission.add_to_database(data, language_id_map)
         print('... done')
 

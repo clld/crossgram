@@ -1,3 +1,4 @@
+import pathlib
 import re
 
 from clld.scripts.util import Data, bibtex2source
@@ -319,23 +320,25 @@ class CLDFBenchSubmission:
                         unitvalue=cvalue, source_pk=source.pk))
 
     @classmethod
-    def load(cls, path):
-        assert path.exists()
-        cldf_path = path / 'cldf' / 'StructureDataset-metadata.json'
-        md_path = path / 'metadata.json'
-        config_path = path / 'etc' / 'config.json'
-        bib_path = path / 'cldf' / 'sources.bib'
+    def load(cls, contrib_md):
+        repo_path = pathlib.Path(contrib_md.get('repo'))
+        assert repo_path.exists()
+        cldf_path = repo_path / 'cldf' / 'StructureDataset-metadata.json'
+        md_path = repo_path / 'metadata.json'
+        config_path = repo_path / 'etc' / 'config.json'
+        bib_path = repo_path / 'cldf' / 'sources.bib'
 
         md = jsonlib.load(md_path) if md_path.exists() else {}
 
         config = jsonlib.load(config_path) if config_path.exists() else {}
-        authors = config.get('authors', ())
+        authors = contrib_md.get('authors') or config.get('authors') or ()
 
         cldf_dataset = StructureDataset.from_metadata(cldf_path)
         sources = bibtex.Database.from_file(bib_path) if bib_path.exists() else None
 
         submission_id = (
-            md.get('id')
+            contrib_md.get('id')
+            or md.get('id')
             or cldf_dataset.properties.get('rc:ID')
             or slug(path.name))
         return cls(
