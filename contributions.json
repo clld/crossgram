@@ -1,0 +1,32 @@
+{
+    "contributions": [
+        {
+            "number": 1,
+            "date": "2020",
+            "id": "comparison",
+            "repo": "../comparison",
+            "authors": [
+                "Jane Doe",
+                {"name": "John Doe", "affiliation": "University of Does"}
+            ]
+        },
+        {
+            "number": 2,
+            "date": "2020",
+            "id": "petersonsouthasia",
+            "repo": "../../cldf-datasets/petersonsouthasia",
+            "authors": [
+                {"name": "John M. Peterson", "affiliation": "Kiel University"}
+            ]
+        },
+        {
+            "number": 3,
+            "date": "2020",
+            "id": "dryerorder",
+            "repo": "../../cldf-datasets/dryerorder",
+            "authors": [
+                {"name": "Matthew S. Dryer", "affiliation": "University of Buffalo"}
+            ]
+        }
+    ]
+}

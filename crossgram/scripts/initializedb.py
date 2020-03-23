@@ -8,6 +8,7 @@ from datetime import date
 from clld.scripts.util import initializedb, Data
 from clld.db.meta import DBSession
 from clld.db.models import common
+from clldutils import jsonlib
 
 import crossgram
 from crossgram import models
@@ -38,19 +39,14 @@ def main(args):
         common.Editor(dataset=dataset, contributor=ed, ord=i + 1)
     DBSession.add(dataset)
 
-    # TODO less hard-coding of paths etc.
-
     data = Data()
-
     language_id_map = {}
-    for repo_path in (
-        pathlib.Path.home() / 'repos' / 'crossgram' / 'comparison',
-        pathlib.Path.home() / 'repos' / 'cldf-datasets' / 'petersonsouthasia',
-    ):
-        print("Loading submission '{}'...".format(repo_path), end='')
-        submission = load_cldfbench(repo_path)
+    for contrib in jsonlib.load('contributions.json')['contributions']:
+        print('Loading submission', contrib['id'], '...')
+        contrib_path = pathlib.Path(contrib['repo'])
+        submission = load_cldfbench(contrib_path)
         submission.add_to_database(data, language_id_map)
-        print('done.')
+        print('... done')
 
 
 def prime_cache(args):
