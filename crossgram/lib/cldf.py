@@ -272,9 +272,11 @@ class CLDFBenchSubmission:
                     parameter=param, contribution=contrib, source=source)
 
             DBSession.flush()
-            value = data.add(
-                Value, old_id,
-                id=new_id, name=name, valueset=valueset, domainelement=code)
+            value = data['Value'].get((valueset.pk, name, code.pk))
+            if not value:
+                value = data.add(
+                    Value, (valueset.pk, name, code.pk),
+                    id=new_id, name=name, valueset=valueset, domainelement=code)
 
             for source_string in sorted(set(value_row.get('Source') or ())):
                 match = re.fullmatch(r'([^[]+)(\[[^]]*\])?', source_string)
