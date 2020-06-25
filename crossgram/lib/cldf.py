@@ -2,7 +2,7 @@ from datetime import date
 import pathlib
 import re
 
-from clld.scripts.util import Data, bibtex2source
+from clld.cliutil import Data, bibtex2source
 from clld.lib import bibtex
 from clldutils import jsonlib
 from clldutils.misc import slug
