@@ -2,6 +2,7 @@ from sqlalchemy.orm import joinedload
 
 from clld.db.meta import DBSession
 from clld.db.models import common
+from clld.db.util import get_distinct_values
 
 from clld.web import datatables
 from clld.web.datatables.base import (
@@ -70,7 +71,8 @@ class Constructions(datatables.Units):
                 self,
                 'contribution',
                 model_col=models.CrossgramData.name,
-                get_obj=lambda i: i.contribution))
+                get_obj=lambda i: i.contribution,
+                choices=get_distinct_values(models.CrossgramData.name)))
         return cols
 
 
@@ -108,24 +110,26 @@ class CValues(datatables.Unitvalues):
         return q
 
     def col_defs(self):
-        cols = [
-            LinkCol(
-                self, 'unit',
-                get_obj=lambda i: i.unit, model_col=common.Unit.name),
-            UnitValueNameCol(self, 'value'),
-            RefsCol(self, 'source')]
+        cols = []
         if not self.unitparameter:
-            cols.insert(0, LinkCol(
+            cols.append(LinkCol(
                 self, 'unitparameter',
                 model_col=models.CParameter.name,
                 get_obj=lambda i: i.unitparameter,
                 sTitle='Construction Parameter'))
-            if not self.contribution:
-                cols.append(LinkCol(
-                    self,
-                    'contribution',
-                    model_col=models.CrossgramData.name,
-                    get_obj=lambda i: i.contribution))
+        if not self.unit:
+            cols.append(LinkCol(
+                self, 'unit',
+                get_obj=lambda i: i.unit, model_col=common.Unit.name))
+        cols.extend((
+            UnitValueNameCol(self, 'value'),
+            RefsCol(self, 'source')))
+        if not self.unitparameter and not self.unit and not self.contribution:
+            cols.append(LinkCol(
+                self,
+                'contribution',
+                model_col=models.CrossgramData.name,
+                get_obj=lambda i: i.contribution))
         return cols
 
 
