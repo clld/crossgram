@@ -59,7 +59,10 @@ class Constructions(datatables.Units):
     __constraints__ = [common.Language, models.CrossgramData]
 
     def base_query(self, query):
-        query = super().base_query(query)
+        query = super()\
+                .base_query(query)\
+                .join(models.CrossgramData)\
+                .options(joinedload(models.Construction.contribution))
         if self.crossgramdata:
             query = query.filter(models.Construction.contribution == self.crossgramdata)
         return query
@@ -81,7 +84,10 @@ class CParameters(datatables.Unitparameters):
     __constraints__ = [models.CrossgramData]
 
     def base_query(self, query):
-        query = super().base_query(query)
+        query = super()\
+                .base_query(query)\
+                .join(models.CrossgramData)\
+                .options(joinedload(models.CParameter.contribution))
         if self.crossgramdata:
             query = query.filter(models.CParameter.contribution == self.crossgramdata)
         return query
@@ -138,7 +144,10 @@ class LParameters(datatables.Parameters):
     __constraints__ = [models.CrossgramData]
 
     def base_query(self, query):
-        query = super().base_query(query)
+        query = super()\
+                .base_query(query)\
+                .join(models.CrossgramData)\
+                .options(joinedload(models.LParameter.contribution))
         if self.crossgramdata:
             query = query.filter(models.LParameter.contribution == self.crossgramdata)
         return query
