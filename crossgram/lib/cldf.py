@@ -1,4 +1,5 @@
 from datetime import date
+from itertools import chain
 import pathlib
 import re
 
@@ -105,9 +106,27 @@ class CLDFBenchSubmission:
             name=self.md.get('title'),
             description=self.md.get('description'))
 
+        used_examples = {
+            id_.strip()
+            for row in chain(
+                self.cldf.get('ValueTable') or (),
+                self.cldf.get('cvalues.csv') or ())
+            for id_ in row.get('Example_IDs') or ()}
+
+        used_languages = {
+            row['Language_ID']
+            for row in chain(
+                self.cldf.get('ValueTable') or (),
+                self.cldf.get('constructions.csv') or ())
+            if row.get('Language_ID')}
+        used_languages.update(
+            row['Language_ID']
+            for row in self.cldf.get('ExampleTable') or ()
+            if row.get('ID') in used_examples and row.get('Language_ID'))
+
         for language_row in self.cldf['LanguageTable']:
             old_id = language_row.get('ID')
-            if not old_id:
+            if not old_id or old_id not in used_languages:
                 continue
 
             # Apparently some datasets contain multiple languages sharing the
@@ -225,7 +244,7 @@ class CLDFBenchSubmission:
             old_id = example_row.get('ID')
             lang_new_id = language_id_map.get(example_row['Language_ID'])
             lang = data['Language'].get(lang_new_id)
-            if not old_id or not lang:
+            if not old_id or not lang or old_id not in used_examples:
                 continue
             new_id = '{}-{}'.format(contrib.id, old_id)
             example_row = _merge_glosses(example_row)
