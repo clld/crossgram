@@ -65,10 +65,18 @@ class Constructions(datatables.Units):
                 .options(joinedload(models.Construction.contribution))
         if self.crossgramdata:
             query = query.filter(models.Construction.contribution == self.crossgramdata)
+        if not self.language:
+            query = query.order_by(common.Language.name)
         return query
 
     def col_defs(self):
-        cols = super().col_defs()
+        cols= [
+            LinkCol(
+                self, 'language', model_col=common.Language.name,
+                get_obj=lambda i: i.language),
+            LinkCol(self, 'name'),
+            DescriptionLinkCol(self, 'description'),
+        ]
         if not self.crossgramdata:
             cols.append(LinkCol(
                 self,
