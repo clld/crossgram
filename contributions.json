@@ -1,18 +1,37 @@
 {
     "contributions": [
         {
-            "id": "comparison",
+            "id": "haspelmathcomparison",
             "number": 1,
-            "published": "2020-03-23",
-            "repo": "../comparison",
+            "published": "2020-09-08",
+            "repo": "../../cldf-datasets/haspelmathcomparison",
             "authors": [
-                "Jane Doe",
-                {"name": "John Doe", "affiliation": "University of Does"}
+                "Martin Haspelmath",
+                "The Comparative Constructions Team"
+            ]
+        },
+        {
+            "id": "malchukovditransitives",
+            "number": 2,
+            "published": "2020-09-08",
+            "repo": "../../cldf-datasets/malchukovditransitives",
+            "authors": [
+                "Andrej Malchukov",
+                "Martin Haspelmath"
+            ]
+        },
+        {
+            "id": "flagbase",
+            "number": 3,
+            "published": "2020-09-08",
+            "repo": "../../cldf-datasets/flagbase",
+            "authors": [
+                "Nikolai-Lab"
             ]
         },
         {
             "id": "petersonsouthasia",
-            "number": 2,
+            "number": 4,
             "published": "2020-03-23",
             "repo": "../../cldf-datasets/petersonsouthasia",
             "authors": [
@@ -21,11 +40,20 @@
         },
         {
             "id": "dryerorder",
-            "number": 3,
+            "number": 5,
             "published": "2020-03-23",
             "repo": "../../cldf-datasets/dryerorder",
             "authors": [
                 {"name": "Matthew S. Dryer", "affiliation": "University of Buffalo"}
+            ]
+        },
+        {
+            "id": "easterdaysyllablestructure",
+            "number": 6,
+            "published": "2020-07-22",
+            "repo": "../../cldf-datasets/easterdaysyllablestructure",
+            "authors": [
+                {"name": "Shelece Easterday", "affiliation": "Université Lumière Lyon"}
             ]
         }
     ]
