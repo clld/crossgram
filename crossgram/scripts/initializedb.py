@@ -39,7 +39,6 @@ def main(args):
         common.Editor(dataset=dataset, contributor=ed, ord=i + 1)
     DBSession.add(dataset)
 
-    data = Data()
     language_id_map = {}
     for contrib_md in jsonlib.load('contributions.json')['contributions']:
         print('Loading submission', contrib_md['id'], '...')
