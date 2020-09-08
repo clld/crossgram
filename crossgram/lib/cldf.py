@@ -348,18 +348,22 @@ class CLDFBenchSubmission:
     @classmethod
     def load(cls, contrib_md):
         repo_path = pathlib.Path(contrib_md.get('repo'))
-        assert repo_path.exists()
-        cldf_path = repo_path / 'cldf' / 'StructureDataset-metadata.json'
+        cldf_md_path = repo_path / 'cldf' / 'cldf-metadata.json'
+        if not cldf_md_path.exists():
+            cldf_md_path = repo_path / 'cldf' / 'StructureDataset-metadata.json'
         md_path = repo_path / 'metadata.json'
         config_path = repo_path / 'etc' / 'config.json'
         bib_path = repo_path / 'cldf' / 'sources.bib'
+
+        assert repo_path.exists()
+        assert cldf_md_path.exists()
 
         md = jsonlib.load(md_path) if md_path.exists() else {}
 
         config = jsonlib.load(config_path) if config_path.exists() else {}
         authors = contrib_md.get('authors') or config.get('authors') or ()
 
-        cldf_dataset = StructureDataset.from_metadata(cldf_path)
+        cldf_dataset = StructureDataset.from_metadata(cldf_md_path)
         sources = bibtex.Database.from_file(bib_path) if bib_path.exists() else None
 
         submission_id = (
