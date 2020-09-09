@@ -372,7 +372,12 @@ class CLDFBenchSubmission:
             or cldf_dataset.properties.get('rc:ID')
             or slug(path.name))
         number = int(contrib_md['number'])
-        published = date.fromisoformat(contrib_md['published'])
+
+        date_match = re.fullmatch('(\d+)-(\d+)-(\d+)', contrib_md['published'])
+        assert date_match
+        yyyy, mm, dd = date_match.groups()
+        published = date(int(yyyy), int(mm), int(dd))
+
         return cls(
             submission_id, number, published, cldf_dataset, md, authors,
             sources)
