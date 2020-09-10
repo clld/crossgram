@@ -322,7 +322,7 @@ class CLDFBenchSubmission:
             new_id = '{}-{}'.format(contrib.id, old_id)
             name = code.name
             # TODO add source (not valid in UnitValue itself -- maybe make UnitValueSource table?)
-            source = ';'.join(value_row['Source']) if 'Source' in value_row else None
+            source = ';'.join(cvalue_row['Source']) if 'Source' in cvalue_row else None
 
             cvalue = data.add(
                 UnitValue, old_id,
@@ -355,8 +355,8 @@ class CLDFBenchSubmission:
         config_path = repo_path / 'etc' / 'config.json'
         bib_path = repo_path / 'cldf' / 'sources.bib'
 
-        assert repo_path.exists()
-        assert cldf_md_path.exists()
+        assert repo_path.exists(), str(repo_path)
+        assert cldf_md_path.exists(), str(cldf_md_path)
 
         md = jsonlib.load(md_path) if md_path.exists() else {}
 
