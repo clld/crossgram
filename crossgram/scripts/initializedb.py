@@ -39,8 +39,12 @@ def main(args):
         common.Editor(dataset=dataset, contributor=ed, ord=i + 1)
     DBSession.add(dataset)
 
+    internal_repo = pathlib.Path('../../crossgram/crossgram-internal')
+    submissions_path = internal_repo / 'submissions-internal'
+
     language_id_map = {}
-    for contrib_md in jsonlib.load('contributions.json')['contributions']:
+    for contrib_dir in submissions_path.iterdir():
+        contrib_md = jsonlib.load(contrib_dir / 'md.json')
         print('Loading submission', contrib_md['id'], '...')
         submission = CLDFBenchSubmission.load(contrib_md)
         submission.add_to_database(data, language_id_map)
