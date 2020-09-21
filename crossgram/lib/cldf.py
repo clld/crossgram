@@ -346,16 +346,15 @@ class CLDFBenchSubmission:
                         unitvalue=cvalue, source_pk=source.pk))
 
     @classmethod
-    def load(cls, contrib_md):
-        repo_path = pathlib.Path(contrib_md.get('repo'))
-        cldf_md_path = repo_path / 'cldf' / 'cldf-metadata.json'
+    def load(cls, path, contrib_md):
+        cldf_md_path = path / 'cldf' / 'cldf-metadata.json'
         if not cldf_md_path.exists():
-            cldf_md_path = repo_path / 'cldf' / 'StructureDataset-metadata.json'
-        md_path = repo_path / 'metadata.json'
-        config_path = repo_path / 'etc' / 'config.json'
-        bib_path = repo_path / 'cldf' / 'sources.bib'
+            cldf_md_path = path / 'cldf' / 'StructureDataset-metadata.json'
+        md_path = path / 'metadata.json'
+        config_path = path / 'etc' / 'config.json'
+        bib_path = path / 'cldf' / 'sources.bib'
 
-        assert repo_path.exists(), str(repo_path)
+        assert path.exists(), str(path)
         assert cldf_md_path.exists(), str(cldf_md_path)
 
         md = jsonlib.load(md_path) if md_path.exists() else {}

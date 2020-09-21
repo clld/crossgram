@@ -40,13 +40,24 @@ def main(args):
     DBSession.add(dataset)
 
     internal_repo = pathlib.Path('../../crossgram/crossgram-internal')
+    # TODO --internal switch for published and unpublished data
     submissions_path = internal_repo / 'submissions-internal'
 
     language_id_map = {}
     for contrib_dir in submissions_path.iterdir():
         contrib_md = jsonlib.load(contrib_dir / 'md.json')
+
+        # TODO download data from zenodo
+        # TODO clone git repo
+        # TODO pull latest git commit if necessary
+        path = internal_repo / 'datasets' / contrib_md['id']
+
+        # FIXME just temporary
+        if not path.exists():
+            print('could not find folder', str(path))
+            continue
         print('Loading submission', contrib_md['id'], '...')
-        submission = CLDFBenchSubmission.load(contrib_md)
+        submission = CLDFBenchSubmission.load(path, contrib_md)
         submission.add_to_database(data, language_id_map)
         print('... done')
 
