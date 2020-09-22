@@ -11,6 +11,8 @@ from clld.db.models import common
 from clldutils import jsonlib
 from clldutils.misc import slug
 
+import git
+
 import crossgram
 from crossgram import models
 from crossgram.lib.cldf import CLDFBenchSubmission
@@ -58,13 +60,31 @@ def main(args):
                     'Downloading submission', sid,
                     'from zenodo; doi:', doi)
                 download_from_doi(doi, path)
+
+        elif contrib_md.get('repo'):
+            repo = contrib_md.get('repo')
+            checkout = contrib_md.get('checkout')
+            if checkout:
+                # specific commit/tag/branch
+                path = internal_repo / 'datasets' / '{}-{}'.format(sid, slug(checkout))
+                if not path.exists():
+                    print('Cloning', repo, 'into', path, '...')
+                    git.Git().clone(repo, path)
+                    print('Checking out commit', checkout, '...')
+                    git.Git(str(path)).checkout(checkout)
+            else:
+                # latest commit on the default branch
+                path = internal_repo / 'datasets' / sid
+                if not path.exists():
+                    print('Cloning', repo, 'into', path, '...')
+                    git.Git().clone(repo, path)
+                else:
+                    print('Pulling latest commit in', path, '...')
+                    git.Git(str(path)).pull()
+
         else:
             path = internal_repo / 'datasets' / sid
 
-        # TODO clone git repo
-        # TODO pull latest git commit if necessary
-
-        # FIXME just temporary
         if not path.exists():
             print('could not find folder', str(path))
             continue

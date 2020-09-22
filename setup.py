@@ -20,6 +20,7 @@ setup(
     zip_safe=False,
     install_requires=[
         'clld>=7.0.0',
+        'gitpython',
         'psycopg2',
     ],
     extras_require={
