@@ -8,6 +8,7 @@ from clld.lib import bibtex
 from clldutils import jsonlib
 from clldutils.misc import slug
 from nameparser import HumanName
+from pycldf import iter_datasets
 from pycldf.dataset import StructureDataset
 
 from clld.db.meta import DBSession
@@ -347,23 +348,26 @@ class CLDFBenchSubmission:
 
     @classmethod
     def load(cls, path, contrib_md):
-        cldf_md_path = path / 'cldf' / 'cldf-metadata.json'
-        if not cldf_md_path.exists():
-            cldf_md_path = path / 'cldf' / 'StructureDataset-metadata.json'
-        md_path = path / 'metadata.json'
-        config_path = path / 'etc' / 'config.json'
-        bib_path = path / 'cldf' / 'sources.bib'
-
+        # zenodo download dumps all files into a subfolder
+        if not (path / 'cldf').exists():
+            for subpath in path.glob('*'):
+                if (subpath / 'cldf').exists():
+                    path = subpath
+                    break
         assert path.exists(), str(path)
-        assert cldf_md_path.exists(), str(cldf_md_path)
 
+        try:
+            cldf_dataset = next(iter_datasets(path / 'cldf'))
+        except StopIteration:
+            raise ValueError('No cldf metadata file found in {}'.format(path))
+
+        bib_path = path / 'cldf' / 'sources.bib'
+        sources = bibtex.Database.from_file(bib_path) if bib_path.exists() else None
+
+        md_path = path / 'metadata.json'
         md = jsonlib.load(md_path) if md_path.exists() else {}
 
-        config = jsonlib.load(config_path) if config_path.exists() else {}
-        authors = contrib_md.get('authors') or config.get('authors') or ()
-
-        cldf_dataset = StructureDataset.from_metadata(cldf_md_path)
-        sources = bibtex.Database.from_file(bib_path) if bib_path.exists() else None
+        authors = contrib_md.get('authors') or ()
 
         submission_id = (
             contrib_md.get('id')
