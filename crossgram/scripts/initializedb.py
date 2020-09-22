@@ -44,6 +44,9 @@ def main(args):
     DBSession.add(dataset)
 
     internal_repo = pathlib.Path('../../crossgram/crossgram-internal')
+    cache_dir = internal_repo / 'datasets'
+    cache_dir.mkdir(exist_ok=True)
+
     # TODO --internal switch for published and unpublished data
     submissions_path = internal_repo / 'submissions-internal'
 
@@ -54,7 +57,7 @@ def main(args):
 
         if contrib_md.get('doi'):
             doi = contrib_md['doi']
-            path = internal_repo / 'datasets' / '{}-{}'.format(sid, slug(doi))
+            path = cache_dir / '{}-{}'.format(sid, slug(doi))
             if not path.exists():
                 print(
                     'Downloading submission', sid,
@@ -66,7 +69,7 @@ def main(args):
             checkout = contrib_md.get('checkout')
             if checkout:
                 # specific commit/tag/branch
-                path = internal_repo / 'datasets' / '{}-{}'.format(sid, slug(checkout))
+                path = cache_dir / '{}-{}'.format(sid, slug(checkout))
                 if not path.exists():
                     print('Cloning', repo, 'into', path, '...')
                     git.Git().clone(repo, path)
@@ -74,7 +77,7 @@ def main(args):
                     git.Git(str(path)).checkout(checkout)
             else:
                 # latest commit on the default branch
-                path = internal_repo / 'datasets' / sid
+                path = cache_dir / sid
                 if not path.exists():
                     print('Cloning', repo, 'into', path, '...')
                     git.Git().clone(repo, path)
@@ -83,7 +86,7 @@ def main(args):
                     git.Git(str(path)).pull()
 
         else:
-            path = internal_repo / 'datasets' / sid
+            path = cache_dir / sid
 
         if not path.exists():
             print('could not find folder', str(path))
