@@ -20,6 +20,8 @@ from crossgram.lib.cldf_zenodo import download_from_doi
 
 
 def main(args):
+    internal = input('[i]nternal or [e]xternal data (default: e): ').strip().lower() == 'i'
+
     data = Data()
 
     dataset = common.Dataset(
@@ -47,21 +49,24 @@ def main(args):
     cache_dir = internal_repo / 'datasets'
     cache_dir.mkdir(exist_ok=True)
 
-    # TODO --internal switch for published and unpublished data
-    submissions_path = internal_repo / 'submissions-internal'
+    if internal:
+        submissions_path = internal_repo / 'submissions-internal'
+    else:
+        submissions_path = internal_repo / 'submissions'
 
     language_id_map = {}
     for contrib_dir in submissions_path.iterdir():
+        if not contrib_dir.is_dir():
+            continue
+        sid = contrib_dir.name
+        print('Loading submission', sid, '...')
         contrib_md = jsonlib.load(contrib_dir / 'md.json')
-        sid = contrib_md['id']
 
         if contrib_md.get('doi'):
             doi = contrib_md['doi']
             path = cache_dir / '{}-{}'.format(sid, slug(doi))
             if not path.exists():
-                print(
-                    'Downloading submission', sid,
-                    'from zenodo; doi:', doi)
+                print('Downloading dataset from Zenodo; doi:', doi)
                 download_from_doi(doi, path)
 
         elif contrib_md.get('repo'):
@@ -82,7 +87,7 @@ def main(args):
                     print('Cloning', repo, 'into', path, '...')
                     git.Git().clone(repo, path)
                 else:
-                    print('Pulling latest commit in', path, '...')
+                    print('Pulling latest commit')
                     git.Git(str(path)).pull()
 
         else:
@@ -92,7 +97,6 @@ def main(args):
             print('could not find folder', str(path))
             continue
 
-        print('Loading submission', sid, '...')
         submission = CLDFBenchSubmission.load(path, contrib_md)
         submission.add_to_database(data, language_id_map)
         print('... done')
