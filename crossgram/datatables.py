@@ -6,13 +6,14 @@ from clld.db.util import get_distinct_values
 
 from clld.web import datatables
 from clld.web.datatables.base import (
-    Col, DataTable, DetailsRowLinkCol, IdCol, LinkCol, LinkToMapCol, RefsCol,
+    Col, DataTable, DetailsRowLinkCol, IdCol, LinkCol, LinkToMapCol,
 )
 from clld.web.datatables.contribution import ContributorsCol, CitationCol
 from clld.web.datatables.contributor import NameCol, ContributionsCol, AddressCol
 from clld.web.datatables.sentence import TsvCol
 from clld.web.datatables.unit import DescriptionLinkCol
 from clld.web.datatables.unitvalue import UnitValueNameCol
+from clld.web.util.helpers import linked_references
 
 from crossgram import models
 
@@ -27,6 +28,17 @@ class NumberCol(Col):
 
 class DateCol(Col):
     __kw__ = {'bSearchable': False}
+
+
+class RefsCol(Col):
+
+    """Column listing linked sources."""
+
+    __kw__ = dict(bSearchable=False, bSortable=False)
+
+    def format(self, item):
+        vs = self.get_obj(item)
+        return linked_references(self.dt.req, vs)
 
 
 class CrossgramDatasets(DataTable):
