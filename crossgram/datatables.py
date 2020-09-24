@@ -6,10 +6,11 @@ from clld.db.util import get_distinct_values
 
 from clld.web import datatables
 from clld.web.datatables.base import (
-    Col, DataTable, DetailsRowLinkCol, IdCol, LinkCol, LinkToMapCol, RefsCol
+    Col, DataTable, DetailsRowLinkCol, IdCol, LinkCol, LinkToMapCol, RefsCol,
 )
 from clld.web.datatables.contribution import ContributorsCol, CitationCol
 from clld.web.datatables.contributor import NameCol, ContributionsCol, AddressCol
+from clld.web.datatables.sentence import TsvCol
 from clld.web.datatables.unit import DescriptionLinkCol
 from clld.web.datatables.unitvalue import UnitValueNameCol
 
@@ -199,7 +200,33 @@ class Examples(datatables.Sentences):
         query = super().base_query(query)
         if self.crossgramdata:
             query = query.filter(models.Example.contribution == self.crossgramdata)
-        return query
+        return query.order_by(models.Language.name)
+
+    def col_defs(self):
+        cols = [
+            LinkCol(
+                self,
+                'language',
+                model_col=common.Language.name,
+                get_obj=lambda i: i.language,
+                bSortable=not self.language,
+                bSearchable=not self.language),
+            LinkCol(self, 'name', sTitle='Primary text', sClass="object-language"),
+            TsvCol(self, 'analyzed', sTitle='Analyzed text'),
+            TsvCol(self, 'gloss', sClass="gloss"),
+            Col(self,
+                'description',
+                sTitle=self.req.translate('Translation'),
+                sClass="translation"),
+            DetailsRowLinkCol(self, 'd'),
+        ]
+        if not self.crossgramdata:
+            cols.append(LinkCol(
+                self,
+                'contribution',
+                model_col=models.CrossgramData.name,
+                get_obj=lambda i: i.contribution))
+        return cols
 
 
 class Sources(datatables.Sources):
