@@ -279,10 +279,10 @@ class CLDFBenchSubmission:
             lang = data['Language'].get(lang_new_id)
             param = data['LParameter'].get(value_row['Parameter_ID'])
             code = data['DomainElement'].get(value_row['Code_ID'])
-            if not old_id or not lang or not param or not code:
+            value = code.name if code else value_row['Value']
+            if not old_id or not lang or not param or not value:
                 continue
             new_id = '{}-{}'.format(contrib.id, old_id)
-            name = code.name
             source = ';'.join(value_row['Source']) if 'Source' in value_row else None
 
             valueset = data['ValueSet'].get((lang.pk, param.pk))
@@ -292,11 +292,11 @@ class CLDFBenchSubmission:
                     parameter=param, contribution=contrib, source=source)
 
             DBSession.flush()
-            value = data['Value'].get((valueset.pk, name, code.pk))
+            value = data['Value'].get((valueset.pk, value))
             if not value:
                 value = data.add(
-                    Value, (valueset.pk, name, code.pk),
-                    id=new_id, name=name, valueset=valueset, domainelement=code)
+                    Value, (valueset.pk, value),
+                    id=new_id, name=value, valueset=valueset, domainelement=code)
 
             for source_string in sorted(set(value_row.get('Source') or ())):
                 match = re.fullmatch(r'([^[]+)(\[[^]]*\])?', source_string)
@@ -318,16 +318,16 @@ class CLDFBenchSubmission:
             constr = data['Construction'].get(cvalue_row['Construction_ID'])
             param = data['CParameter'].get(cvalue_row['Parameter_ID'])
             code = data['UnitDomainElement'].get(cvalue_row['Code_ID'])
-            if not old_id or not constr or not param or not code:
+            value = code.name if code else cvalue_row['Value']
+            if not old_id or not constr or not param or not value:
                 continue
             new_id = '{}-{}'.format(contrib.id, old_id)
-            name = code.name
             # TODO add source (not valid in UnitValue itself -- maybe make UnitValueSource table?)
             source = ';'.join(cvalue_row['Source']) if 'Source' in cvalue_row else None
 
             cvalue = data.add(
                 UnitValue, old_id,
-                id=new_id, name=name, contribution=contrib, unit=constr,
+                id=new_id, name=value, contribution=contrib, unit=constr,
                 unitparameter=param, unitdomainelement=code)
 
             DBSession.flush()
