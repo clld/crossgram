@@ -17,6 +17,7 @@ from clld import interfaces
 from clld.db.meta import Base, CustomModelMixin
 from clld.db.models.common import (
     Contribution,
+    Language,
     Parameter,
     Sentence,
     Source,
@@ -45,6 +46,14 @@ class CrossgramData(CustomModelMixin, Contribution):
             return external_link(
                 'https://doi.org/{0.doi}'.format(self), label='DOI: {0.doi}'.format(self))
         return ''
+
+
+class ContributionLanguage(Base):
+
+    contribution_pk = Column(Integer, ForeignKey('contribution.pk'))
+    language_pk = Column(Integer, ForeignKey('language.pk'))
+    contribution = relationship(Contribution, backref='language_assocs')
+    language = relationship(Language, backref='contribution_assocs')
 
 
 @implementer(interfaces.IUnit)

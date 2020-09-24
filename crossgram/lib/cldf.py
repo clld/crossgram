@@ -28,6 +28,7 @@ from clld.db.models import (
 from crossgram.models import (
     CrossgramData,
     Construction,
+    ContributionLanguage,
     Example,
     LParameter,
     CParameter,
@@ -143,11 +144,17 @@ class CLDFBenchSubmission:
 
             language_id_map[old_id] = new_id
             if not lang:
-                data.add(
+                lang = data.add(
                     Language,
                     new_id,
                     id=new_id,
                     **map_cols(LANG_MAP, language_row))
+
+            DBSession.flush()
+            DBSession.add(
+                ContributionLanguage(
+                    language_pk=lang.pk,
+                    contribution_pk=contrib.pk))
 
         DBSession.flush()
 

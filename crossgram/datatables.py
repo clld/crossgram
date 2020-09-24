@@ -6,7 +6,7 @@ from clld.db.util import get_distinct_values
 
 from clld.web import datatables
 from clld.web.datatables.base import (
-    Col, DataTable, DetailsRowLinkCol, LinkCol, RefsCol,
+    Col, DataTable, DetailsRowLinkCol, IdCol, LinkCol, LinkToMapCol, RefsCol
 )
 from clld.web.datatables.contribution import ContributorsCol, CitationCol
 from clld.web.datatables.contributor import NameCol, ContributionsCol, AddressCol
@@ -51,6 +51,22 @@ class ContributionContributors(DataTable):
             NameCol(self, 'name'),
             ContributionsCol(self, 'Contributions'),
             AddressCol(self, 'address'),
+        ]
+
+
+class Languages(datatables.Languages):
+
+    def base_query(self, query):
+        return DBSession.query(common.Language) \
+            .join(models.ContributionLanguage) \
+            .join(common.Contribution)
+
+    def col_defs(self):
+        return [
+            IdCol(self, 'id'),
+            LinkCol(self, 'name'),
+            LinkToMapCol(self, 'm'),
+            ContributionsCol(self, 'contributions')
         ]
 
 
@@ -212,6 +228,7 @@ class Sources(datatables.Sources):
 def includeme(config):
     config.register_datatable('contributions', CrossgramDatasets)
     config.register_datatable('contributors', ContributionContributors)
+    config.register_datatable('languages', Languages)
     config.register_datatable('parameters', LParameters)
     config.register_datatable('sentences', Examples)
     config.register_datatable('unitparameters', CParameters)
