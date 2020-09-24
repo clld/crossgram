@@ -255,16 +255,17 @@ class CLDFBenchSubmission:
                 **map_cols(EXAMPLE_MAP, example_row))
 
             DBSession.flush()
-            # FIXME does not work
-            #  Idea 1: mabe Source is not an array here?
             source_string = example_row.get('Source')
             if source_string:
-                match = re.fullmatch(r'([^[]+)(\[[^]]*\])?', source_string)
+                match = re.fullmatch(r'([^[]+)(?:\[([^]]*)\])?', source_string)
                 if not match or not match.group(1):
                     continue
-                source = biblio_map.get(match.group(1))
+                bibkey, pages = match.groups()
+                source = biblio_map.get(bibkey)
                 if source:
                     DBSession.add(SentenceReference(
+                            key=bibkey,
+                            description=pages,
                             sentence_pk=example.pk,
                             source_pk=source.pk))
 
