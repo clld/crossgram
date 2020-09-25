@@ -13,6 +13,13 @@
 </p>
 % endif
 
+% if ctx.references:
+<p>
+    <em>Sources:</em>
+    ${h.linked_references(request, ctx)|n}
+</p>
+% endif
+
 <dl>
 % for key, objs in h.groupby(ctx.data, lambda o: o.key):
 <dt>${key}</dt>
