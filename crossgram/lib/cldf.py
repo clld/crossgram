@@ -70,9 +70,23 @@ EXAMPLE_MAP = {
     'Source': 'source'}
 
 
-ValueSetRefTuple = namedtuple(
-    'ValueSetRefTuple',
+SourceTuple = namedtuple(
+    'SourceTuple',
     ('bibkey', 'pages', 'source_string', 'source_pk'))
+
+
+def parse_source(biblio_map, source_string):
+    match = re.fullmatch(r'([^[]+)(?:\[([^]]*)\])?', source_string)
+    if match and match.group(1):
+        bibkey, pages = match.groups()
+        source = biblio_map.get(bibkey)
+        return SourceTuple(
+            bibkey=bibkey,
+            pages=pages or '',
+            source_string=source_string,
+            source_pk=source.pk if source else None)
+    else:
+        return None
 
 
 def map_cols(mapping, col):
@@ -261,19 +275,13 @@ class CLDFBenchSubmission:
                 **map_cols(EXAMPLE_MAP, example_row))
 
             DBSession.flush()
-            source_string = example_row.get('Source')
-            if source_string:
-                match = re.fullmatch(r'([^[]+)(?:\[([^]]*)\])?', source_string)
-                if not match or not match.group(1):
-                    continue
-                bibkey, pages = match.groups()
-                source = biblio_map.get(bibkey)
-                if source:
-                    DBSession.add(SentenceReference(
-                        key=bibkey,
-                        description=pages,
-                        sentence_pk=example.pk,
-                        source_pk=source.pk))
+            st = parse_source(biblio_map, example_row.get('Source') or '')
+            if st and st.source_pk is not None:
+                DBSession.add(SentenceReference(
+                    key=st.bibkey,
+                    description=st.pages,
+                    sentence_pk=example.pk,
+                    source_pk=st.source_pk))
 
         DBSession.flush()
 
@@ -303,21 +311,12 @@ class CLDFBenchSubmission:
                     id=new_id, name=value, valueset=valueset, domainelement=code)
 
             for source_string in sorted(set(value_row.get('Source') or ())):
-                match = re.fullmatch(r'([^[]+)(?:\[([^]]*)\])?', source_string)
-                if not match or not match.group(1):
-                    continue
-                bibkey, pages = match.groups()
-                source = biblio_map.get(bibkey)
-                if source:
+                st = parse_source(biblio_map, source_string)
+                if st and st.source_pk is not None:
                     # collect sources for all values in the same value set
                     if valueset.pk not in valueset_refs:
                         valueset_refs[valueset.pk] = list()
-                    valueset_refs[valueset.pk].append(
-                        ValueSetRefTuple(
-                            bibkey=bibkey,
-                            pages=pages or '',
-                            source_string=source_string,
-                            source_pk=source.pk))
+                    valueset_refs[valueset.pk].append(st)
 
             DBSession.flush()
             for ex_id in set(value_row.get('Example_IDs', ())):
@@ -361,17 +360,13 @@ class CLDFBenchSubmission:
                         unitvalue=cvalue, sentence=example))
 
             for source_string in sorted(set(cvalue_row.get('Source') or ())):
-                match = re.fullmatch(r'([^[]+)(?:\[([^]]*)\])?', source_string)
-                if not match or not match.group(1):
-                    continue
-                bibkey, pages = match.groups()
-                source = biblio_map.get(bibkey)
-                if source:
+                st = parse_source(biblio_map, source_string)
+                if st and st.source_pk is not None:
                     DBSession.add(UnitValueReference(
-                        key=bibkey,
-                        description=pages,
+                        key=st.bibkey,
+                        description=st.pages or None,
                         unitvalue=cvalue,
-                        source_pk=source.pk))
+                        source_pk=st.source_pk))
 
     @classmethod
     def load(cls, path, contrib_md):
