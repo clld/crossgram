@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from datetime import date
 from itertools import chain
 import pathlib
@@ -264,13 +265,14 @@ class CLDFBenchSubmission:
                 source = biblio_map.get(bibkey)
                 if source:
                     DBSession.add(SentenceReference(
-                            key=bibkey,
-                            description=pages,
-                            sentence_pk=example.pk,
-                            source_pk=source.pk))
+                        key=bibkey,
+                        description=pages,
+                        sentence_pk=example.pk,
+                        source_pk=source.pk))
 
         DBSession.flush()
 
+        valueset_refs = OrderedDict()
         for value_row in self.cldf.get('ValueTable', ()):
             old_id = value_row.get('ID')
             lang_new_id = language_id_map.get(value_row['Language_ID'])
@@ -281,13 +283,12 @@ class CLDFBenchSubmission:
             if not old_id or not lang or not param or not value:
                 continue
             new_id = '{}-{}'.format(contrib.id, old_id)
-            source = ';'.join(value_row['Source']) if 'Source' in value_row else None
 
             valueset = data['ValueSet'].get((lang.pk, param.pk))
             if not valueset:
                 valueset = data.add(
                     ValueSet, (lang.pk, param.pk), id=new_id, language=lang,
-                    parameter=param, contribution=contrib, source=source)
+                    parameter=param, contribution=contrib)
 
             DBSession.flush()
             value = data['Value'].get((valueset.pk, value))
@@ -297,19 +298,38 @@ class CLDFBenchSubmission:
                     id=new_id, name=value, valueset=valueset, domainelement=code)
 
             for source_string in sorted(set(value_row.get('Source') or ())):
-                match = re.fullmatch(r'([^[]+)(\[[^]]*\])?', source_string)
+                match = re.fullmatch(r'([^[]+)(?:\[([^]]*)\])?', source_string)
                 if not match or not match.group(1):
                     continue
-                source = biblio_map.get(match.group(1))
+                bibkey, pages = match.groups()
+                source = biblio_map.get(bibkey)
                 if source:
-                    DBSession.add(ValueSetReference(
-                        valueset=valueset, source_pk=source.pk))
+                    # collect sources for all values in the same value set
+                    if valueset.pk not in valueset_refs:
+                        valueset_refs[valueset.pk] = list()
+                    # FIXME use something more stable (namedtuple maybe?)
+                    valueset_refs[valueset.pk].append(
+                        (bibkey, pages or '', source_string, source.pk))
 
             DBSession.flush()
             for ex_id in set(value_row.get('Example_IDs', ())):
                 example = data['Example'].get(ex_id)
                 if example:
                     DBSession.add(ValueSentence(value=value, sentence=example))
+
+        # attach collected sources from values to the value set
+        valuesets = DBSession.query(ValueSet)\
+            .filter(ValueSet.contribution == contrib)
+        for valueset in valuesets:
+            source_tuples = sorted(set(valueset_refs.get(valueset.pk, ())))
+            for source_tuple in source_tuples:
+                bibkey, pages, _, source_pk = source_tuple
+                DBSession.add(ValueSetReference(
+                    key=bibkey,
+                    description=pages or None,
+                    valueset_pk=valueset.pk,
+                    source_pk=source_pk))
+            valueset.source = ';'.join(t[2] for t in source_tuples)
 
         for cvalue_row in self.cldf.get('cvalues.csv', ()):
             old_id = cvalue_row.get('ID')
@@ -320,8 +340,6 @@ class CLDFBenchSubmission:
             if not old_id or not constr or not param or not value:
                 continue
             new_id = '{}-{}'.format(contrib.id, old_id)
-            # TODO add source (not valid in UnitValue itself -- maybe make UnitValueSource table?)
-            source = ';'.join(cvalue_row['Source']) if 'Source' in cvalue_row else None
 
             cvalue = data.add(
                 UnitValue, old_id,
@@ -336,13 +354,17 @@ class CLDFBenchSubmission:
                         unitvalue=cvalue, sentence=example))
 
             for source_string in sorted(set(cvalue_row.get('Source') or ())):
-                match = re.fullmatch(r'([^[]+)(\[[^]]*\])?', source_string)
+                match = re.fullmatch(r'([^[]+)(?:\[([^]]*)\])?', source_string)
                 if not match or not match.group(1):
                     continue
-                source = biblio_map.get(match.group(1))
+                bibkey, pages = match.groups()
+                source = biblio_map.get(bibkey)
                 if source:
                     DBSession.add(UnitValueReference(
-                        unitvalue=cvalue, source_pk=source.pk))
+                        key=bibkey,
+                        description=pages,
+                        unitvalue=cvalue,
+                        source_pk=source.pk))
 
     @classmethod
     def load(cls, path, contrib_md):
