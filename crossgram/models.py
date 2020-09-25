@@ -84,6 +84,14 @@ class Example(CustomModelMixin, Sentence):
     contribution = relationship(CrossgramData, backref='examples')
 
 
+class UnitReference(Base, HasSourceNotNullMixin):
+
+    __table_args__ = (UniqueConstraint('unit_pk', 'source_pk', 'description'),)
+
+    unit_pk = Column(Integer, ForeignKey('unit.pk'), nullable=False)
+    unit = relationship(Unit, innerjoin=True, backref="references")
+
+
 class UnitValueReference(Base, HasSourceNotNullMixin):
 
     __table_args__ = (UniqueConstraint('unitvalue_pk', 'source_pk', 'description'),)
