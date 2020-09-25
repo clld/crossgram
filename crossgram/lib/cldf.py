@@ -34,6 +34,7 @@ from crossgram.models import (
     LParameter,
     CParameter,
     UnitReference,
+    UnitSentence,
     UnitValueReference,
     UnitValueSentence,
     CrossgramDataSource,
@@ -202,31 +203,6 @@ class CLDFBenchSubmission:
                 source.contribution = contrib
                 biblio_map[old_id] = source
 
-        for constr_row in self.cldf.get('constructions.csv', ()):
-            old_id = constr_row.get('ID')
-            if not old_id:
-                continue
-            new_id = '{}-{}'.format(contrib.id, old_id)
-            lang_new_id = language_id_map.get(constr_row['Language_ID'])
-            lang = data['Language'].get(lang_new_id)
-            constr = data.add(
-                Construction,
-                old_id,
-                language=lang,
-                contribution=contrib,
-                id=new_id,
-                **map_cols(CONSTR_MAP, constr_row))
-
-            DBSession.flush()
-            for source_string in sorted(set(constr_row.get('Source') or ())):
-                st = parse_source(biblio_map, source_string)
-                if st and st.source_pk is not None:
-                    DBSession.add(UnitReference(
-                        key=st.bibkey,
-                        description=st.pages,
-                        unit_pk=constr.pk,
-                        source_pk=st.source_pk))
-
         cparam_ids = {
             row['Parameter_ID']
             for row in self.cldf.get('cvalues.csv', ())
@@ -293,6 +269,38 @@ class CLDFBenchSubmission:
                     description=st.pages,
                     sentence_pk=example.pk,
                     source_pk=st.source_pk))
+
+        DBSession.flush()
+
+        for constr_row in self.cldf.get('constructions.csv', ()):
+            old_id = constr_row.get('ID')
+            if not old_id:
+                continue
+            new_id = '{}-{}'.format(contrib.id, old_id)
+            lang_new_id = language_id_map.get(constr_row['Language_ID'])
+            lang = data['Language'].get(lang_new_id)
+            constr = data.add(
+                Construction,
+                old_id,
+                language=lang,
+                contribution=contrib,
+                id=new_id,
+                **map_cols(CONSTR_MAP, constr_row))
+
+            DBSession.flush()
+            for source_string in sorted(set(constr_row.get('Source') or ())):
+                st = parse_source(biblio_map, source_string)
+                if st and st.source_pk is not None:
+                    DBSession.add(UnitReference(
+                        key=st.bibkey,
+                        description=st.pages,
+                        unit_pk=constr.pk,
+                        source_pk=st.source_pk))
+
+            for ex_id in set(value_row.get('Example_IDs', ())):
+                example = data['Example'].get(ex_id)
+                if example:
+                    DBSession.add(UnitSentence(unit=constr, sentence=example))
 
         DBSession.flush()
 

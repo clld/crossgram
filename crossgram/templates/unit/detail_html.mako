@@ -20,6 +20,8 @@
 </p>
 % endif
 
+## TODO show list of examples
+
 <dl>
 % for key, objs in h.groupby(ctx.data, lambda o: o.key):
 <dt>${key}</dt>

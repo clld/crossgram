@@ -92,6 +92,14 @@ class UnitReference(Base, HasSourceNotNullMixin):
     unit = relationship(Unit, innerjoin=True, backref="references")
 
 
+class UnitSentence(Base):
+
+    unit_pk = Column(Integer, ForeignKey('unit.pk'))
+    sentence_pk = Column(Integer, ForeignKey('sentence.pk'))
+    unit = relationship('Unit', backref='sentence_assocs')
+    sentence = relationship('Sentence', backref='unit_assocs')
+
+
 class UnitValueReference(Base, HasSourceNotNullMixin):
 
     __table_args__ = (UniqueConstraint('unitvalue_pk', 'source_pk', 'description'),)
