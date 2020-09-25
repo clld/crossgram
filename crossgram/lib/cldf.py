@@ -1,4 +1,4 @@
-from collections import OrderedDict
+from collections import namedtuple, OrderedDict
 from datetime import date
 from itertools import chain
 import pathlib
@@ -68,6 +68,11 @@ EXAMPLE_MAP = {
     'Analyzed_Word': 'analyzed',
     'Gloss': 'gloss',
     'Source': 'source'}
+
+
+ValueSetRefTuple = namedtuple(
+    'ValueSetRefTuple',
+    ('bibkey', 'pages', 'source_string', 'source_pk'))
 
 
 def map_cols(mapping, col):
@@ -307,9 +312,12 @@ class CLDFBenchSubmission:
                     # collect sources for all values in the same value set
                     if valueset.pk not in valueset_refs:
                         valueset_refs[valueset.pk] = list()
-                    # FIXME use something more stable (namedtuple maybe?)
                     valueset_refs[valueset.pk].append(
-                        (bibkey, pages or '', source_string, source.pk))
+                        ValueSetRefTuple(
+                            bibkey=bibkey,
+                            pages=pages or '',
+                            source_string=source_string,
+                            source_pk=source.pk))
 
             DBSession.flush()
             for ex_id in set(value_row.get('Example_IDs', ())):
@@ -322,14 +330,13 @@ class CLDFBenchSubmission:
             .filter(ValueSet.contribution == contrib)
         for valueset in valuesets:
             source_tuples = sorted(set(valueset_refs.get(valueset.pk, ())))
-            for source_tuple in source_tuples:
-                bibkey, pages, _, source_pk = source_tuple
+            for st in source_tuples:
                 DBSession.add(ValueSetReference(
-                    key=bibkey,
-                    description=pages or None,
+                    key=st.bibkey,
+                    description=st.pages or None,
                     valueset_pk=valueset.pk,
-                    source_pk=source_pk))
-            valueset.source = ';'.join(t[2] for t in source_tuples)
+                    source_pk=st.source_pk))
+            valueset.source = ';'.join(st[2] for st in source_tuples)
 
         for cvalue_row in self.cldf.get('cvalues.csv', ()):
             old_id = cvalue_row.get('ID')
