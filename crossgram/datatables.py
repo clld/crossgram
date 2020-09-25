@@ -45,7 +45,7 @@ class CrossgramDatasets(DataTable):
 
     def col_defs(self):
         return [
-            NumberCol(self, 'number'),
+            NumberCol(self, 'number', model_col=models.CrossgramData.number),
             LinkCol(self, 'name'),
             ContributorsCol(self, 'contributor'),
             DateCol(self, 'published'),
