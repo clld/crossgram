@@ -18,7 +18,7 @@ def download_from_doi(doi, outdir=pathlib.Path('.')):
     res = requests.get(res.url + '/export/json')
     soup = bs(res.text, 'html.parser')
     res = json.loads(soup.find('pre').text)
-    assert any(kw.startswith('cldf:') for kw in res['metadata']['keywords'])
+    assert any(kw.lower().startswith('cldf') for kw in res['metadata']['keywords'])
     for f in res['files']:
         if f['type'] == 'zip':
             r = requests.get(f['links']['self'], stream=True)
