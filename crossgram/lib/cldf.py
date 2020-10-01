@@ -297,7 +297,7 @@ class CLDFBenchSubmission:
                         unit_pk=constr.pk,
                         source_pk=st.source_pk))
 
-            for ex_id in set(value_row.get('Example_IDs', ())):
+            for ex_id in sorted(set(constr_row.get('Example_IDs', ()))):
                 example = data['Example'].get(ex_id)
                 if example:
                     DBSession.add(UnitSentence(unit=constr, sentence=example))
@@ -338,7 +338,7 @@ class CLDFBenchSubmission:
                     valueset_refs[valueset.pk].append(st)
 
             DBSession.flush()
-            for ex_id in set(value_row.get('Example_IDs', ())):
+            for ex_id in sorted(set(value_row.get('Example_IDs', ()))):
                 example = data['Example'].get(ex_id)
                 if example:
                     DBSession.add(ValueSentence(value=value, sentence=example))
