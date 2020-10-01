@@ -20,8 +20,6 @@
 </p>
 % endif
 
-## TODO show list of examples
-
 <dl>
 % for key, objs in h.groupby(ctx.data, lambda o: o.key):
 <dt>${key}</dt>
@@ -30,5 +28,19 @@
     % endfor
 % endfor
 </dl>
+
+% if ctx.sentence_assocs:
+<p><strong>${_('Sentences')}</strong></p>
+<ol>
+%   for a in ctx.sentence_assocs:
+    <li>
+        ${h.rendered_sentence(a.sentence)}
+        % if a.sentence.references:
+        <p><em>See</em> ${h.linked_references(request, a.sentence)}</p>
+        % endif
+    </li>
+%   endfor
+</ol>
+% endif
 
 ${request.get_datatable('unitvalues', h.models.UnitValue, unit=ctx).render()}
