@@ -21,6 +21,7 @@ from crossgram.lib.cldf_zenodo import download_from_doi
 
 def main(args):
     internal = input('[i]nternal or [e]xternal data (default: e): ').strip().lower() == 'i'
+    which_submission = input("submission id or 'all' for all submissions (default: all)").strip().lower()
 
     data = Data()
 
@@ -57,6 +58,8 @@ def main(args):
     language_id_map = {}
     for contrib_dir in submissions_path.iterdir():
         if not contrib_dir.is_dir():
+            continue
+        if which_submission != 'all' and which_submission != contrib_dir.name:
             continue
         sid = contrib_dir.name
         print('Loading submission', sid, '...')
