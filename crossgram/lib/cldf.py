@@ -164,6 +164,8 @@ class CLDFBenchSubmission:
                     **map_cols(LANG_MAP, language_row))
 
             DBSession.flush()
+            # TODO add glottocode, iso code, and wals code if available
+
             DBSession.add(
                 ContributionLanguage(
                     language_pk=lang.pk,

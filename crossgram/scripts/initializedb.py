@@ -1,15 +1,18 @@
 from __future__ import unicode_literals
 
+from collections import OrderedDict
 import pathlib
 import sys
 
 from datetime import date
 
+import cldfcatalog
 from clld.cliutil import Data
 from clld.db.meta import DBSession
 from clld.db.models import common
 from clldutils import jsonlib
 from clldutils.misc import slug
+from pyglottolog import Glottolog
 
 import git
 
@@ -21,7 +24,7 @@ from crossgram.lib.cldf_zenodo import download_from_doi
 
 def main(args):
     internal = input('[i]nternal or [e]xternal data (default: e): ').strip().lower() == 'i'
-    which_submission = input("submission id or 'all' for all submissions (default: all)").strip().lower()
+    which_submission = input("submission id or 'all' for all submissions (default: all): ").strip().lower()
 
     data = Data()
 
@@ -110,3 +113,48 @@ def prime_cache(args):
     This procedure should be separate from the db initialization, because
     it will have to be run periodically whenever data has been updated.
     """
+
+    print('Retrieving language data from glottolog...')
+
+    catconf = cldfcatalog.Config.from_file()
+    glottolog_path = catconf.get_clone('glottolog')
+    glottolog = Glottolog(glottolog_path)
+
+    lang_ids = [lang.id for lang in DBSession.query(common.Language)]
+    languoids = {l.id: l for l in glottolog.languoids(lang_ids)}
+
+    glottocodes = [
+        (l.id, common.Identifier(id=l.id, name=l.id, type='glottolog'))
+        for l in languoids.values()]
+    glottocodes = OrderedDict(sorted(glottocodes, key=lambda t: t[0]))
+
+    isocodes = [
+        (l.iso, common.Identifier(id=l.iso, name=l.iso, type='iso639-3'))
+        for l in languoids.values()
+        if l.iso]
+    isocodes = OrderedDict(sorted(isocodes, key=lambda t: t[0]))
+
+    DBSession.add_all(glottocodes.values())
+    DBSession.add_all(isocodes.values())
+    DBSession.flush()
+
+    for lang in DBSession.query(common.Language):
+        if lang.id not in languoids:
+            continue
+        languoid = languoids[lang.id]
+        lang.name = languoid.name
+        lang.latitude = languoid.latitude
+        lang.longitude = languoid.longitude
+        lang.macroarea = languoid.macroareas[0].name if languoid.macroareas else ''
+
+        DBSession.add(common.LanguageIdentifier(
+            language=lang,
+            identifier_pk=glottocodes[languoid.id].pk))
+
+        if languoid.iso in isocodes:
+            DBSession.add(common.LanguageIdentifier(
+                language=lang,
+                identifier_pk=isocodes[languoid.iso].pk))
+
+    DBSession.flush()
+    print('done...')

@@ -11,8 +11,7 @@
     construction_list = list(
         DBSession.query(m.Construction)
             .join(h.models.Contribution)
-            .filter(m.Construction.language == ctx)
-            .order_by(m.Construction.name))
+            .filter(m.Construction.language == ctx))
 %>
 % if construction_list:
 <h3>Constructions</h3>
