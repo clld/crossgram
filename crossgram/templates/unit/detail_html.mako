@@ -38,6 +38,9 @@
         % if a.sentence.references:
         <p><em>See</em> ${h.linked_references(request, a.sentence)}</p>
         % endif
+        % if a.sentence.comment:
+        <dl><dt>Comment:</dt><dd>${a.sentence.comment}</dd></dl>
+        % endif
     </li>
 %   endfor
 </ol>
