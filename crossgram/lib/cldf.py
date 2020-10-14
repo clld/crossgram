@@ -139,6 +139,7 @@ class CLDFBenchSubmission:
                 self.cldf.get('constructions.csv') or ())
             if row.get('Language_ID')}
 
+        local_lang_ids = set()
         for language_row in self.cldf['LanguageTable']:
             old_id = language_row.get('ID')
             if not old_id or old_id not in used_languages:
@@ -150,10 +151,14 @@ class CLDFBenchSubmission:
             number = 1
             new_id = id_candidate
             lang = data['Language'].get(new_id)
-            while lang and slug(lang.name) != slug(language_row.get('Name')):
+            while (lang
+                and new_id in local_lang_ids
+                and slug(lang.name) != slug(language_row.get('Name'))
+            ):
                 number += 1
                 new_id = '{}-{}'.format(id_candidate, number)
                 lang = data['Language'].get(new_id)
+            local_lang_ids.add(new_id)
 
             language_id_map[old_id] = new_id
             if not lang:
