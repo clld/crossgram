@@ -4,7 +4,7 @@
 
 <h2>${_('Contribution')}: ${ctx.name}</h2>
 
-${util.data()}
+<p>by ${h.linked_contributors(request, ctx)}</p>
 
 <div class="tabbable">
 
@@ -32,7 +32,9 @@ ${util.data()}
             <div class="span8">
                 ${util.files()}
                 ${util.data()}
-                ${ctx.description or ''|n}
+                <div class="intro">
+                    ${ctx.markup_description or ''|n}
+                </div>
             </div>
             <div class="span4">
                 <div class="well well-small">

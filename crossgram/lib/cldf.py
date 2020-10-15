@@ -121,7 +121,7 @@ class CLDFBenchSubmission:
         self.authors = authors
         self.sources = sources
 
-    def add_to_database(self, data, language_id_map):
+    def add_to_database(self, data, language_id_map, intro):
         contrib = data.add(
             CrossgramData,
             self.sid,
@@ -129,7 +129,7 @@ class CLDFBenchSubmission:
             number=self.number,
             published=self.published,
             name=self.md.get('title'),
-            description=self.md.get('description'))
+            description=intro)
 
         used_languages = {
             row['Language_ID']

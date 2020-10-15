@@ -15,6 +15,7 @@ from clldutils.misc import slug
 from pyglottolog import Glottolog
 
 import git
+from markdown import markdown
 
 import crossgram
 from crossgram import models
@@ -67,6 +68,13 @@ def main(args):
         sid = contrib_dir.name
         print('Loading submission', sid, '...')
         contrib_md = jsonlib.load(contrib_dir / 'md.json')
+        intro = None
+        try:
+            with (contrib_dir / 'intro.md').open(encoding='utf-8') as f:
+                intro = f.read()
+        except IOError:
+            # If there is no intro, there is no intro *shrug*
+            pass
 
         if contrib_md.get('doi'):
             doi = contrib_md['doi']
@@ -104,7 +112,7 @@ def main(args):
             continue
 
         submission = CLDFBenchSubmission.load(path, contrib_md)
-        submission.add_to_database(data, language_id_map)
+        submission.add_to_database(data, language_id_map, intro)
         print('... done')
 
 
@@ -113,6 +121,14 @@ def prime_cache(args):
     This procedure should be separate from the db initialization, because
     it will have to be run periodically whenever data has been updated.
     """
+
+    print('Parsing markdown intros...')
+    for contrib in DBSession.query(models.Contribution):
+        if contrib.description:
+            contrib.markup_description = markdown(contrib.description)
+        else:
+            contrib.markup_description = None
+    print('...done')
 
     print('Retrieving language data from glottolog...')
 
