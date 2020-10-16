@@ -112,7 +112,9 @@ def _merge_glosses(col):
 
 class CLDFBenchSubmission:
 
-    def __init__(self, sid, number, published, cldf, md, authors, sources):
+    def __init__(
+        self, sid, number, published, cldf, md, authors, sources, readme
+    ):
         self.sid = sid
         self.number = number
         self.published = published
@@ -120,6 +122,7 @@ class CLDFBenchSubmission:
         self.cldf = cldf
         self.authors = authors
         self.sources = sources
+        self.readme = readme
 
     def add_to_database(self, data, language_id_map, intro):
         contrib = data.add(
@@ -129,7 +132,7 @@ class CLDFBenchSubmission:
             number=self.number,
             published=self.published,
             name=self.md.get('title'),
-            description=intro)
+            description=intro or self.readme)
 
         used_languages = {
             row['Language_ID']
@@ -416,6 +419,14 @@ class CLDFBenchSubmission:
         md_path = path / 'metadata.json'
         md = jsonlib.load(md_path) if md_path.exists() else {}
 
+        # XXX maybe also allow README.txt?
+        readme_path = path / 'README.md'
+        try:
+            with readme_path.open(encoding='utf-8') as f:
+                readme = f.read().strip()
+        except IOError:
+            readme = None
+
         authors = contrib_md.get('authors') or ()
 
         submission_id = (
@@ -432,4 +443,4 @@ class CLDFBenchSubmission:
 
         return cls(
             submission_id, number, published, cldf_dataset, md, authors,
-            sources)
+            sources, readme)
