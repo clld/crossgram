@@ -22,6 +22,8 @@ setup(
         'clld>=7.0.0',
         'gitpython',
         'psycopg2',
+        'cldfcatalog',
+        'pyglottolog',
     ],
     extras_require={
         'dev': ['flake8', 'waitress'],
