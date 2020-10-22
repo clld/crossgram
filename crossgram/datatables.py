@@ -44,6 +44,8 @@ class RefsCol(Col):
 class CrossgramDatasets(DataTable):
 
     def col_defs(self):
+        # XXX maybe combine doi and git columns to 'data source'
+        # => if there is a doi maybo only show git repo on download page?
         return [
             NumberCol(self, 'number', model_col=models.CrossgramData.number),
             LinkCol(self, 'name'),
