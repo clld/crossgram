@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 from collections import OrderedDict
 import pathlib
+import re
 import sys
 
 from datetime import date
@@ -67,6 +68,7 @@ def main(args):
             continue
         sid = contrib_dir.name
         print('Loading submission', sid, '...')
+
         contrib_md = jsonlib.load(contrib_dir / 'md.json')
         intro = None
         try:
@@ -112,7 +114,22 @@ def main(args):
             continue
 
         submission = CLDFBenchSubmission.load(path, contrib_md)
-        submission.add_to_database(data, language_id_map, intro)
+
+        date_match = re.fullmatch('(\d+)-(\d+)-(\d+)', contrib_md['published'])
+        assert date_match
+        yyyy, mm, dd = date_match.groups()
+        published = date(int(yyyy), int(mm), int(dd))
+
+        contrib = data.add(
+            models.CrossgramData,
+            submission.sid,
+            id=submission.sid,
+            number=int(contrib_md['number']),
+            published=published,
+            name=submission.title,
+            description=intro or submission.readme)
+
+        submission.add_to_database(data, language_id_map, contrib)
         print('... done')
 
 

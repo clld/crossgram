@@ -112,28 +112,15 @@ def _merge_glosses(col):
 
 class CLDFBenchSubmission:
 
-    def __init__(
-        self, sid, number, published, cldf, md, authors, sources, readme
-    ):
+    def __init__(self, sid, cldf, sources, authors, title, readme):
         self.sid = sid
-        self.number = number
-        self.published = published
-        self.md = md
+        self.title = title
         self.cldf = cldf
         self.authors = authors
         self.sources = sources
         self.readme = readme
 
-    def add_to_database(self, data, language_id_map, intro):
-        contrib = data.add(
-            CrossgramData,
-            self.sid,
-            id=self.sid,
-            number=self.number,
-            published=self.published,
-            name=self.md.get('title'),
-            description=intro or self.readme)
-
+    def add_to_database(self, data, language_id_map, contrib):
         used_languages = {
             row['Language_ID']
             for row in chain(
@@ -434,13 +421,7 @@ class CLDFBenchSubmission:
             or md.get('id')
             or cldf_dataset.properties.get('rc:ID')
             or slug(path.name))
-        number = int(contrib_md['number'])
-
-        date_match = re.fullmatch('(\d+)-(\d+)-(\d+)', contrib_md['published'])
-        assert date_match
-        yyyy, mm, dd = date_match.groups()
-        published = date(int(yyyy), int(mm), int(dd))
 
         return cls(
-            submission_id, number, published, cldf_dataset, md, authors,
-            sources, readme)
+            submission_id, cldf_dataset, sources, authors, md.get('title'),
+            readme)
