@@ -49,6 +49,13 @@ class CrossgramDatasets(DataTable):
             LinkCol(self, 'name'),
             ContributorsCol(self, 'contributor'),
             DateCol(self, 'published'),
+            Col(
+                self,
+                'doi',
+                bSearchable=False,
+                bSortable=False,
+                sTitle='DOI',
+                format=lambda i: i.doi_link()),
             CitationCol(self, 'cite'),
         ]
 
@@ -263,6 +270,7 @@ class Sources(datatables.Sources):
                 model_col=models.CrossgramData.name,
                 get_obj=lambda i: i.contribution))
         return cols
+
 
 def includeme(config):
     config.register_datatable('contributions', CrossgramDatasets)

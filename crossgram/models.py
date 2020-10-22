@@ -26,6 +26,7 @@ from clld.db.models.common import (
     UnitValue,
 )
 from clld.db.models.source import HasSourceNotNullMixin
+from clld.web.util.helpers import external_link
 
 
 @implementer(interfaces.IContribution)
@@ -35,6 +36,7 @@ class CrossgramData(CustomModelMixin, Contribution):
     published = Column(Date)
     toc = Column(Unicode)
     doi = Column(Unicode)
+    git_repo = Column(Unicode)
 
     def metalanguage_label(self, lang):
         style = self.jsondata['metalanguage_styles'].get(lang)

@@ -127,6 +127,8 @@ def main(args):
             number=int(contrib_md['number']),
             published=published,
             name=submission.title,
+            doi=contrib_md.get('doi'),
+            git_repo=contrib_md.get('repo'),
             description=intro or submission.readme)
 
         submission.add_to_database(data, language_id_map, contrib)
