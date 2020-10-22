@@ -56,6 +56,13 @@ class CrossgramDatasets(DataTable):
                 bSortable=False,
                 sTitle='DOI',
                 format=lambda i: i.doi_link()),
+            Col(
+                self,
+                'git',
+                bSearchable=False,
+                bSortable=False,
+                sTitle='Git repository',
+                format=lambda i: i.git_link()),
             CitationCol(self, 'cite'),
         ]
 

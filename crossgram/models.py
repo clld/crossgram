@@ -49,6 +49,12 @@ class CrossgramData(CustomModelMixin, Contribution):
                 'https://doi.org/{0.doi}'.format(self), label='DOI: {0.doi}'.format(self))
         return ''
 
+    def git_link(self):
+        if self.git_repo:
+            return external_link(self.git_repo)
+        else:
+            return ''
+
 
 class ContributionLanguage(Base):
 
