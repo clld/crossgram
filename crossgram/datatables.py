@@ -44,8 +44,6 @@ class RefsCol(Col):
 class CrossgramDatasets(DataTable):
 
     def col_defs(self):
-        # XXX maybe combine doi and git columns to 'data source'
-        # => if there is a doi maybo only show git repo on download page?
         return [
             NumberCol(self, 'number', model_col=models.CrossgramData.number),
             LinkCol(self, 'name'),
@@ -53,18 +51,11 @@ class CrossgramDatasets(DataTable):
             DateCol(self, 'published'),
             Col(
                 self,
-                'doi',
+                'data_source',
                 bSearchable=False,
                 bSortable=False,
-                sTitle='DOI',
-                format=lambda i: i.doi_link()),
-            Col(
-                self,
-                'git',
-                bSearchable=False,
-                bSortable=False,
-                sTitle='Git repository',
-                format=lambda i: i.git_link()),
+                sTitle='Data source',
+                format=lambda i: i.doi_link() or i.git_link()),
             CitationCol(self, 'cite'),
         ]
 
