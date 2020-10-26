@@ -19,10 +19,11 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
+        'cldfcatalog',
         'clld>=7.0.0',
+        'clld-glottologfamily-plugin',
         'gitpython',
         'psycopg2',
-        'cldfcatalog',
         'pyglottolog',
     ],
     extras_require={
