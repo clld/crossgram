@@ -181,7 +181,7 @@ class CLDFBenchSubmission:
                     Contributor,
                     author_id,
                     id=author_id,
-                    name=name,
+                    name=parsed_name.full_name,
                     address=spec.get('affiliation'),
                     url=spec.get('url'),
                     email=spec.get('email'))
