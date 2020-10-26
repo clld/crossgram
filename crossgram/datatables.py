@@ -11,7 +11,6 @@ from clld.web.datatables.base import (
 from clld.web.datatables.contribution import ContributorsCol, CitationCol
 from clld.web.datatables.contributor import NameCol, ContributionsCol, AddressCol
 from clld.web.datatables.sentence import TsvCol
-from clld.web.datatables.unit import DescriptionLinkCol
 from clld.web.datatables.unitvalue import UnitValueNameCol
 from clld.web.util.helpers import linked_references
 
