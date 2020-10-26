@@ -72,8 +72,7 @@ EXAMPLE_MAP = {
     'Translated_Text': 'description',
     'Analyzed_Word': 'analyzed',
     'Gloss': 'gloss',
-    'Comment': 'comment',
-    'Source': 'source'}
+    'Comment': 'comment'}
 
 
 SourceTuple = namedtuple(
