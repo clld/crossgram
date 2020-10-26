@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 from collections import OrderedDict
+from itertools import cycle, groupby
 import pathlib
 import re
 import sys
@@ -11,6 +12,7 @@ import cldfcatalog
 from clld.cliutil import Data
 from clld.db.meta import DBSession
 from clld.db.models import common
+from clld.web.icon import ORDERED_ICONS
 from clldutils import jsonlib
 from clldutils.misc import slug
 from clld_glottologfamily_plugin.util import load_families
@@ -210,6 +212,19 @@ def prime_cache(args):
             DBSession.add(common.LanguageIdentifier(
                 language=lang,
                 identifier_pk=isocodes[languoid.iso].pk))
+
+    DBSession.flush()
+    print('... done')
+
+    print('Making pretty colourful dots for parameter values...')
+    all_icons = [icon.name for icon in ORDERED_ICONS]
+
+    code_query = DBSession.query(common.DomainElement)\
+        .order_by(common.DomainElement.parameter_pk, common.DomainElement.id)
+    for _, param_codes in groupby(code_query, lambda c: c.parameter_pk):
+        icons = cycle(all_icons)
+        for code in param_codes:
+            code.update_jsondata(icon=next(icons))
 
     DBSession.flush()
     print('... done')

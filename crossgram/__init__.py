@@ -24,24 +24,12 @@ _('Unit Parameter')
 _('Unit Parameters')
 
 
-# class LanguageByFamilyMapMarker(util.LanguageByFamilyMapMarker):
-#     def get_icon(self, ctx, req):
-#         if IValue.providedBy(ctx):
-#             ctx = ctx.valueset.language
-#         if IValueSet.providedBy(ctx):
-#             ctx = ctx.language
-#         return LanguageByFamilyMapMarker.get_icon(self, ctx, req)
-
-
-# class LanguageByFamilyMapMarker(util.LanguageByFamilyMapMarker):
-#     def __call__(self, ctx, req):
-#         if IValueSet.providedBy(ctx):
-#             c = collections.Counter([v.domainelement.jsondata['color'] for v in ctx.values])
-#             return data_url(pie(*list(zip(*[(v, k) for k, v in c.most_common()])), **dict(stroke_circle=True)))
-#         if IDomainElement.providedBy(ctx):
-#             return data_url(icon(ctx.jsondata['color'].replace('#', 'c')))
-#         if IValue.providedBy(ctx):
-#             return data_url(icon(ctx.domainelement.jsondata['color'].replace('#', 'c')))
+class LanguageByFamilyMapMarker(util.LanguageByFamilyMapMarker):
+    def get_icon(self, ctx, req):
+        if IValue.providedBy(ctx) and ctx.domainelement:
+            return ctx.domainelement.jsondata['icon']
+        else:
+            return super().get_icon(ctx, req)
 
 
 def main(global_config, **settings):
@@ -50,7 +38,7 @@ def main(global_config, **settings):
     config = Configurator(settings=settings)
     config.include('clld.web.app')
     config.include('clld_glottologfamily_plugin')
-    config.registry.registerUtility(util.LanguageByFamilyMapMarker(), IMapMarker)
+    config.registry.registerUtility(LanguageByFamilyMapMarker(), IMapMarker)
 
     config.register_menu(
         ('dataset', partial(menu_item, 'dataset', label='Home')),

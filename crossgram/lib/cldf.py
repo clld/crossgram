@@ -6,6 +6,7 @@ import re
 
 from clld.cliutil import Data, bibtex2source
 from clld.lib import bibtex
+from clld.web.icon import ORDERED_ICONS
 from clldutils import jsonlib
 from clldutils.misc import slug
 from nameparser import HumanName
@@ -17,6 +18,7 @@ from clld.db.models import (
     ContributionContributor,
     Contributor,
     DomainElement,
+    DomainElement_data,
     Language,
     UnitDomainElement,
     UnitValue,
