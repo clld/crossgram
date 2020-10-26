@@ -33,7 +33,7 @@ class LanguageByFamilyMapMarker(util.LanguageByFamilyMapMarker):
                 for v in ctx.values
                 if v.domainelement]
             # FIXME this only shows the *first* value
-            return icons[0]
+            return icons[0] if len(icons) > 0 else None
         elif IValue.providedBy(ctx) and ctx.domainelement:
             return ctx.domainelement.jsondata['icon']
         else:
