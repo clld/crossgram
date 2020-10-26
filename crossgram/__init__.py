@@ -1,9 +1,10 @@
+import itertools
 from functools import partial
 
 from pyramid.config import Configurator
-from clld_glottologfamily_plugin import util
 from clld.interfaces import IDomainElement, IMapMarker, IValueSet, IValue
 from clld.web.app import menu_item
+from clld_glottologfamily_plugin import util
 
 # we must make sure custom models are known at database initialization!
 from crossgram import models
@@ -26,7 +27,14 @@ _('Unit Parameters')
 
 class LanguageByFamilyMapMarker(util.LanguageByFamilyMapMarker):
     def get_icon(self, ctx, req):
-        if IValue.providedBy(ctx) and ctx.domainelement:
+        if IValueSet.providedBy(ctx):
+            icons = [
+                v.domainelement.jsondata['icon']
+                for v in ctx.values
+                if v.domainelement]
+            # FIXME this only shows the *first* value
+            return icons[0]
+        elif IValue.providedBy(ctx) and ctx.domainelement:
             return ctx.domainelement.jsondata['icon']
         else:
             return super().get_icon(ctx, req)
