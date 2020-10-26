@@ -60,7 +60,10 @@ class CrossgramData(CustomModelMixin, Contribution):
     def git_link(self):
         if self.git_repo:
             match = re.search(r'github\.com/([^/]*)/([^/]*)', self.git_repo)
-            label = 'Github: %s/%s' % match.groups() if match else self.git_repo
+            if match:
+                label = 'Github: %s/%s' % match.groups()
+            else:
+                label = 'Git: {}'.format(self.git_repo)
             return external_link(self.git_repo, label=label)
         else:
             return ''
