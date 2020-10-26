@@ -310,8 +310,8 @@ class CLDFBenchSubmission:
             lang = data['Variety'].get(lang_new_id)
             param = data['LParameter'].get(value_row['Parameter_ID'])
             code = data['DomainElement'].get(value_row['Code_ID'])
-            value = code.name if code else value_row['Value']
-            if not old_id or not lang or not param or not value:
+            value_name = code.name if code and code.name else value_row['Value']
+            if not old_id or not lang or not param or not value_name:
                 continue
             new_id = '{}-{}'.format(contrib.id, old_id)
 
@@ -322,11 +322,12 @@ class CLDFBenchSubmission:
                     parameter=param, contribution=contrib)
 
             DBSession.flush()
-            value = data['Value'].get((valueset.pk, value))
-            if not value:
-                value = data.add(
-                    Value, (valueset.pk, value),
-                    id=new_id, name=value, valueset=valueset, domainelement=code)
+            lvalue = data['Value'].get((valueset.pk, value_name))
+            if not lvalue:
+                lvalue = data.add(
+                    Value, (valueset.pk, value_name),
+                    id=new_id, name=value_name, valueset=valueset,
+                    domainelement=code)
 
             for source_string in sorted(set(value_row.get('Source') or ())):
                 st = parse_source(biblio_map, source_string)
@@ -340,7 +341,7 @@ class CLDFBenchSubmission:
             for ex_id in sorted(set(value_row.get('Example_IDs', ()))):
                 example = data['Example'].get(ex_id)
                 if example:
-                    DBSession.add(ValueSentence(value=value, sentence=example))
+                    DBSession.add(ValueSentence(value=lvalue, sentence=example))
 
         # attach collected sources from values to the value set
         valuesets = DBSession.query(ValueSet)\
@@ -360,14 +361,14 @@ class CLDFBenchSubmission:
             constr = data['Construction'].get(cvalue_row['Construction_ID'])
             param = data['CParameter'].get(cvalue_row['Parameter_ID'])
             code = data['UnitDomainElement'].get(cvalue_row['Code_ID'])
-            value = code.name if code else cvalue_row['Value']
-            if not old_id or not constr or not param or not value:
+            value_name = code.name if code else cvalue_row['Value']
+            if not old_id or not constr or not param or not value_name:
                 continue
             new_id = '{}-{}'.format(contrib.id, old_id)
 
             cvalue = data.add(
                 UnitValue, old_id,
-                id=new_id, name=value, contribution=contrib, unit=constr,
+                id=new_id, name=value_name, contribution=contrib, unit=constr,
                 unitparameter=param, unitdomainelement=code)
 
             DBSession.flush()
