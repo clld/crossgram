@@ -111,7 +111,7 @@ class Constructions(datatables.Units):
                 self, 'language', model_col=common.Language.name,
                 get_obj=lambda i: i.language),
             LinkCol(self, 'name'),
-            DescriptionLinkCol(self, 'description'),
+            Col(self, 'description'),
         ]
         if not self.crossgramdata:
             cols.append(LinkCol(
