@@ -29,6 +29,12 @@ from clld.db.models.common import (
 )
 from clld.db.models.source import HasSourceNotNullMixin
 from clld.web.util.helpers import external_link
+from clld_glottologfamily_plugin.models import HasFamilyMixin
+
+
+@implementer(interfaces.ILanguage)
+class Variety(CustomModelMixin, Language, HasFamilyMixin):
+    pk = Column(Integer, ForeignKey('language.pk'), primary_key=True)
 
 
 @implementer(interfaces.IContribution)

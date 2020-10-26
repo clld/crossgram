@@ -13,6 +13,7 @@ from clld.db.meta import DBSession
 from clld.db.models import common
 from clldutils import jsonlib
 from clldutils.misc import slug
+from clld_glottologfamily_plugin.util import load_families
 from pyglottolog import Glottolog
 
 import git
@@ -134,6 +135,20 @@ def main(args):
         submission.add_to_database(data, language_id_map, contrib)
         print('... done')
 
+    DBSession.flush()
+    print('Loading language family data...')
+    catconf = cldfcatalog.Config.from_file()
+    glottolog_path = catconf.get_clone('glottolog')
+    load_families(
+        Data(),
+        [
+            v for v in DBSession.query(models.Variety)
+            if re.fullmatch('[a-z]{4}[0-9]{4}', v.id)
+        ],
+        strict=False,
+        glottolog_repos=glottolog_path)
+    print('... done')
+
 
 def prime_cache(args):
     """If data needs to be denormalized for lookup, do that here.
@@ -147,7 +162,7 @@ def prime_cache(args):
             contrib.markup_description = markdown(contrib.description)
         else:
             contrib.markup_description = None
-    print('...done')
+    print('... done')
 
     print('Retrieving language data from glottolog...')
 
@@ -192,4 +207,4 @@ def prime_cache(args):
                 identifier_pk=isocodes[languoid.iso].pk))
 
     DBSession.flush()
-    print('done...')
+    print('... done')

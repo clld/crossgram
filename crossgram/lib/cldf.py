@@ -28,6 +28,7 @@ from clld.db.models import (
 )
 from crossgram.models import (
     CrossgramData,
+    Variety,
     Construction,
     ContributionLanguage,
     Example,
@@ -140,20 +141,20 @@ class CLDFBenchSubmission:
             id_candidate = language_row.get('Glottocode') or old_id
             number = 1
             new_id = id_candidate
-            lang = data['Language'].get(new_id)
+            lang = data['Variety'].get(new_id)
             while (lang
                 and new_id in local_lang_ids
                 and slug(lang.name) != slug(language_row.get('Name'))
             ):
                 number += 1
                 new_id = '{}-{}'.format(id_candidate, number)
-                lang = data['Language'].get(new_id)
+                lang = data['Variety'].get(new_id)
             local_lang_ids.add(new_id)
 
             language_id_map[old_id] = new_id
             if not lang:
                 lang = data.add(
-                    Language,
+                    Variety,
                     new_id,
                     id=new_id,
                     **map_cols(LANG_MAP, language_row))
@@ -246,7 +247,7 @@ class CLDFBenchSubmission:
         for example_row in self.cldf.get('ExampleTable', ()):
             old_id = example_row.get('ID')
             lang_new_id = language_id_map.get(example_row['Language_ID'])
-            lang = data['Language'].get(lang_new_id)
+            lang = data['Variety'].get(lang_new_id)
             if not old_id or not lang:
                 continue
             new_id = '{}-{}'.format(contrib.id, old_id)
@@ -276,7 +277,7 @@ class CLDFBenchSubmission:
                 continue
             new_id = '{}-{}'.format(contrib.id, old_id)
             lang_new_id = language_id_map.get(constr_row['Language_ID'])
-            lang = data['Language'].get(lang_new_id)
+            lang = data['Variety'].get(lang_new_id)
             constr = data.add(
                 Construction,
                 old_id,
@@ -306,7 +307,7 @@ class CLDFBenchSubmission:
         for value_row in self.cldf.get('ValueTable', ()):
             old_id = value_row.get('ID')
             lang_new_id = language_id_map.get(value_row['Language_ID'])
-            lang = data['Language'].get(lang_new_id)
+            lang = data['Variety'].get(lang_new_id)
             param = data['LParameter'].get(value_row['Parameter_ID'])
             code = data['DomainElement'].get(value_row['Code_ID'])
             value = code.name if code else value_row['Value']
