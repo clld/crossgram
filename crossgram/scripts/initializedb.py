@@ -83,8 +83,9 @@ def main(args):
             doi = contrib_md['doi']
             path = cache_dir / '{}-{}'.format(sid, slug(doi))
             if not path.exists():
-                print('Downloading dataset from Zenodo; doi:', doi)
+                print(' * downloading dataset from Zenodo; doi:', doi)
                 download_from_doi(doi, path)
+                print('   done.')
 
         elif contrib_md.get('repo'):
             repo = contrib_md.get('repo')
@@ -93,19 +94,23 @@ def main(args):
                 # specific commit/tag/branch
                 path = cache_dir / '{}-{}'.format(sid, slug(checkout))
                 if not path.exists():
-                    print('Cloning', repo, 'into', path, '...')
+                    print(' * cloning', repo, 'into', path, '...')
                     git.Git().clone(repo, path)
-                    print('Checking out commit', checkout, '...')
+                    print('   done.')
+                    print(' * checking out commit', checkout, '...')
                     git.Git(str(path)).checkout(checkout)
+                    print('   done.')
             else:
                 # latest commit on the default branch
                 path = cache_dir / sid
                 if not path.exists():
-                    print('Cloning', repo, 'into', path, '...')
+                    print(' * cloning', repo, 'into', path, '...')
                     git.Git().clone(repo, path)
+                    print('   done.')
                 else:
-                    print('Pulling latest commit')
+                    print(' * pulling latest commit')
                     git.Git(str(path)).pull()
+                    print('   done.')
 
         else:
             path = cache_dir / sid
