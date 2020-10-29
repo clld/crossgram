@@ -5,7 +5,7 @@
 <%! active_menu_item = "languages" %>
 <%block name="title">${_('Language')} ${ctx.name}</%block>
 
-<h2>${_('Language')} ${ctx.name}</h2>
+<h2>${_('Language')}: ${ctx.name}</h2>
 
 <%
     construction_list = list(

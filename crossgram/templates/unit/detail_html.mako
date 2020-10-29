@@ -3,7 +3,7 @@
 <%! active_menu_item = "units" %>
 
 
-<h2>${_('Unit')} ${ctx.name}</h2>
+<h2>${_('Unit')}: ${ctx.name}</h2>
 
 <p><em>From ${_('Contribution')}: ${h.link(request, ctx.contribution)}</em></p>
 

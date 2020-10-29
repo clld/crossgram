@@ -16,7 +16,7 @@
     % endif
 </%def>
 
-<h2>${_('Sentence')} ${ctx.id}</h2>
+<h2>${_('Sentence')}: ${ctx.id}</h2>
 <dl>
     <dt>${_('Language')}:</dt>
     <dd>${h.link(request, ctx.language)}</dd>
