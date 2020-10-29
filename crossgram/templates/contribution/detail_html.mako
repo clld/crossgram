@@ -2,7 +2,7 @@
 <%namespace name="util" file="../util.mako"/>
 <%! active_menu_item = "contributions" %>
 
-<h2>${_('Contribution')}: ${ctx.name}</h2>
+<h2>${_('Contribution')}: ${ctx.name or ctx.id}</h2>
 
 <p>by ${h.linked_contributors(request, ctx)}</p>
 
