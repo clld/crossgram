@@ -271,13 +271,13 @@ class CLDFBenchSubmission:
                     id=new_id,
                     **map_cols(LCODE_MAP, code_row))
 
-        for example_row in self.cldf.get('ExampleTable', ()):
+        for index, example_row in enumerate(self.cldf.get('ExampleTable', ())):
             old_id = example_row.get('ID')
             lang_new_id = language_id_map.get(example_row['Language_ID'])
             lang = data['Variety'].get(lang_new_id)
             if not old_id or not lang:
                 continue
-            new_id = '{}-{}'.format(contrib.id, old_id)
+            new_id = '{}-{}'.format(contrib.number or contrib.id, index + 1)
             example_row = _merge_glosses(example_row)
             example = data.add(
                 Example,
