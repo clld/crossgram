@@ -136,16 +136,16 @@ class CParameters(datatables.Unitparameters):
         return query
 
     def col_defs(self):
-        cols = [
-            DetailsRowLinkCol(self, 'd'),
-            LinkCol(self, 'name'),
-            Col(self, 'description')]
+        cols = [DetailsRowLinkCol(self, 'd')]
         if not self.crossgramdata:
             cols.append(LinkCol(
                 self,
                 'contribution',
                 model_col=models.CrossgramData.name,
                 get_obj=lambda i: i.contribution))
+        cols.extend([
+            LinkCol(self, 'name'),
+            Col(self, 'description')])
         return cols
 
 
@@ -198,8 +198,6 @@ class LParameters(datatables.Parameters):
     def col_defs(self):
         cols = [
             DetailsRowLinkCol(self, 'd'),
-            LinkCol(self, 'name'),
-            Col(self, 'description')
         ]
         if not self.crossgramdata:
             cols.append(LinkCol(
@@ -207,6 +205,10 @@ class LParameters(datatables.Parameters):
                 'contribution',
                 model_col=models.CrossgramData.name,
                 get_obj=lambda i: i.contribution))
+        cols.extend([
+            LinkCol(self, 'name'),
+            Col(self, 'description')
+        ])
         return cols
 
 
