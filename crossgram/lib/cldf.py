@@ -208,17 +208,43 @@ class CLDFBenchSubmission:
             for row in self.cldf.get('cvalues.csv', ())
             if 'Parameter_ID' in row}
 
-        for param_row in self.cldf.get('ParameterTable', ()):
-            old_id = param_row.get('ID')
-            if not old_id:
-                continue
-            new_id = '{}-{}'.format(contrib.id, old_id)
-            data.add(
-                CParameter if old_id in cparam_ids else LParameter,
-                old_id,
-                contribution=contrib,
-                id=new_id,
-                **map_cols(PARAM_MAP, param_row))
+        if self.cldf.get('ParameterTable'):
+            for param_row in self.cldf.get('ParameterTable', ()):
+                old_id = param_row.get('ID')
+                if not old_id:
+                    continue
+                new_id = '{}-{}'.format(contrib.id, old_id)
+                data.add(
+                    CParameter if old_id in cparam_ids else LParameter,
+                    old_id,
+                    contribution=contrib,
+                    id=new_id,
+                    **map_cols(PARAM_MAP, param_row))
+        else:
+            # If there is no parameter table fall back to Parameter_ID's in the
+            # value tables
+            for lvalue_row in self.cldf.get('ValueTable', ()):
+                old_id = lvalue_row.get('Parameter_ID')
+                if not old_id or old_id in data['LParameter']:
+                    continue
+                new_id = '{}-{}'.format(contrib.id, old_id)
+                data.add(
+                    LParameter,
+                    old_id,
+                    contribution=contrib,
+                    id=new_id,
+                    name=old_id)
+            for cvalue_row in self.cldf.get('cvalues.csv', ()):
+                old_id = lvalue_row.get('Parameter_ID')
+                if not old_id or old_id in data['CParameter']:
+                    continue
+                new_id = '{}-{}'.format(contrib.id, old_id)
+                data.add(
+                    LParameter,
+                    old_id,
+                    contribution=contrib,
+                    id=new_id,
+                    name=old_id)
 
         DBSession.flush()
 
