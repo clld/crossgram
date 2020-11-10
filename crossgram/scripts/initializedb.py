@@ -36,6 +36,7 @@ def main(args):
     dataset = common.Dataset(
         id=crossgram.__name__,
         name='Crossgram',
+        description='Crossgram',
         published=date(2019, 12, 12),
         domain='crossgram.clld.org',
         # XXX Is any of this correct?
@@ -130,8 +131,8 @@ def main(args):
 
         contrib = data.add(
             models.CrossgramData,
-            submission.sid,
-            id=submission.sid,
+            sid,
+            id=sid,
             number=int(contrib_md['number']),
             published=published,
             name=submission.title,

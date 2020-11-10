@@ -114,8 +114,7 @@ def _merge_glosses(col):
 
 class CLDFBenchSubmission:
 
-    def __init__(self, sid, cldf, sources, authors, title, readme):
-        self.sid = sid
+    def __init__(self, cldf, sources, authors, title, readme):
         self.title = title
         self.cldf = cldf
         self.authors = authors
@@ -445,12 +444,4 @@ class CLDFBenchSubmission:
 
         authors = contrib_md.get('authors') or ()
 
-        submission_id = (
-            contrib_md.get('id')
-            or md.get('id')
-            or cldf_dataset.properties.get('rc:ID')
-            or slug(path.name))
-
-        return cls(
-            submission_id, cldf_dataset, sources, authors, md.get('title'),
-            readme)
+        return cls(cldf_dataset, sources, authors, md.get('title'), readme)
