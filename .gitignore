@@ -4,4 +4,5 @@
 __pycache__
 crossgram.egg-info
 .idea/
+geckodriver.log
 
