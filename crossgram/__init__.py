@@ -60,9 +60,8 @@ def main(global_config, **settings):
         ('sentences', partial(menu_item, 'sentences')),
     )
 
-    for cls in [md.BibTex, md.ReferenceManager]:
-        for if_ in [interfaces.IRepresentation, interfaces.IMetadata]:
-            config.register_adapter(
-                cls, interfaces.IContribution, if_, name=cls.mimetype)
+    for if_ in [interfaces.IRepresentation, interfaces.IMetadata]:
+        config.register_adapter(
+            md.BibTex, interfaces.IContribution, if_, name=md.BibTex.mimetype)
 
     return config.make_wsgi_app()

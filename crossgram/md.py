@@ -44,18 +44,3 @@ class BibTex(MetadataFromRec):
 
     def render(self, ctx, req):
         return str(self.rec(ctx, req))
-
-
-@implementer(interfaces.IRepresentation, interfaces.IMetadata)
-class ReferenceManager(MetadataFromRec):
-
-    """Resource metadata in RIS format."""
-
-    name = 'RIS'
-    __label__ = 'RIS'
-    unapi = 'ris'
-    extension = 'md.ris'
-    mimetype = "application/x-research-info-systems"
-
-    def render(self, ctx, req):
-        return self.rec(ctx, req).format('ris')
