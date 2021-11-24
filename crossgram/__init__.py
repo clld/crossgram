@@ -2,12 +2,12 @@ import itertools
 from functools import partial
 
 from pyramid.config import Configurator
-from clld.interfaces import IDomainElement, IMapMarker, IValueSet, IValue
+from clld import interfaces
 from clld.web.app import menu_item
 from clld_glottologfamily_plugin import util
 
 # we must make sure custom models are known at database initialization!
-from crossgram import models
+from crossgram import models, md
 
 
 _ = lambda s: s
@@ -27,14 +27,14 @@ _('Unit Parameters')
 
 class LanguageByFamilyMapMarker(util.LanguageByFamilyMapMarker):
     def get_icon(self, ctx, req):
-        if IValueSet.providedBy(ctx):
+        if interfaces.IValueSet.providedBy(ctx):
             icons = [
                 v.domainelement.jsondata['icon']
                 for v in ctx.values
                 if v.domainelement]
             # FIXME this only shows the *first* value
             return icons[0] if len(icons) > 0 else None
-        elif IValue.providedBy(ctx) and ctx.domainelement:
+        elif interfaces.IValue.providedBy(ctx) and ctx.domainelement:
             return ctx.domainelement.jsondata['icon']
         else:
             return super().get_icon(ctx, req)
@@ -46,7 +46,8 @@ def main(global_config, **settings):
     config = Configurator(settings=settings)
     config.include('clld.web.app')
     config.include('clld_glottologfamily_plugin')
-    config.registry.registerUtility(LanguageByFamilyMapMarker(), IMapMarker)
+    config.registry.registerUtility(
+        LanguageByFamilyMapMarker(), interfaces.IMapMarker)
 
     config.register_menu(
         ('dataset', partial(menu_item, 'dataset', label='Home')),
@@ -58,5 +59,10 @@ def main(global_config, **settings):
         ('languages', partial(menu_item, 'languages')),
         ('sentences', partial(menu_item, 'sentences')),
     )
+
+    for cls in [md.BibTex, md.ReferenceManager]:
+        for if_ in [interfaces.IRepresentation, interfaces.IMetadata]:
+            config.register_adapter(
+                cls, interfaces.IContribution, if_, name=cls.mimetype)
 
     return config.make_wsgi_app()

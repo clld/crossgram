@@ -27,6 +27,46 @@ from crossgram.lib.cldf import CLDFBenchSubmission
 from crossgram.lib.cldf_zenodo import download_from_doi
 
 
+def download_data(sid, contrib_md, cache_dir):
+    if contrib_md.get('doi'):
+        doi = contrib_md['doi']
+        path = cache_dir / '{}-{}'.format(sid, slug(doi))
+        if not path.exists():
+            print(' * downloading dataset from Zenodo; doi:', doi)
+            download_from_doi(doi, path)
+            print('   done.')
+        return path
+
+    elif contrib_md.get('repo'):
+        repo = contrib_md.get('repo')
+        checkout = contrib_md.get('checkout')
+        if checkout:
+            # specific commit/tag/branch
+            path = cache_dir / '{}-{}'.format(sid, slug(checkout))
+            if not path.exists():
+                print(' * cloning', repo, 'into', path, '...')
+                git.Git().clone(repo, path)
+                print('   done.')
+                print(' * checking out commit', checkout, '...')
+                git.Git(str(path)).checkout(checkout)
+                print('   done.')
+        else:
+            # latest commit on the default branch
+            path = cache_dir / sid
+            if not path.exists():
+                print(' * cloning', repo, 'into', path, '...')
+                git.Git().clone(repo, path)
+                print('   done.')
+            else:
+                print(' * pulling latest commit')
+                git.Git(str(path)).pull()
+                print('   done.')
+        return path
+
+    else:
+        return cache_dir / sid
+
+
 def main(args):
     internal = input('[i]nternal or [e]xternal data (default: e): ').strip().lower() == 'i'
     which_submission = input("submission id or 'all' for all submissions (default: all): ").strip().lower() or 'all'
@@ -82,42 +122,7 @@ def main(args):
             # If there is no intro, there is no intro *shrug*
             pass
 
-        if contrib_md.get('doi'):
-            doi = contrib_md['doi']
-            path = cache_dir / '{}-{}'.format(sid, slug(doi))
-            if not path.exists():
-                print(' * downloading dataset from Zenodo; doi:', doi)
-                download_from_doi(doi, path)
-                print('   done.')
-
-        elif contrib_md.get('repo'):
-            repo = contrib_md.get('repo')
-            checkout = contrib_md.get('checkout')
-            if checkout:
-                # specific commit/tag/branch
-                path = cache_dir / '{}-{}'.format(sid, slug(checkout))
-                if not path.exists():
-                    print(' * cloning', repo, 'into', path, '...')
-                    git.Git().clone(repo, path)
-                    print('   done.')
-                    print(' * checking out commit', checkout, '...')
-                    git.Git(str(path)).checkout(checkout)
-                    print('   done.')
-            else:
-                # latest commit on the default branch
-                path = cache_dir / sid
-                if not path.exists():
-                    print(' * cloning', repo, 'into', path, '...')
-                    git.Git().clone(repo, path)
-                    print('   done.')
-                else:
-                    print(' * pulling latest commit')
-                    git.Git(str(path)).pull()
-                    print('   done.')
-
-        else:
-            path = cache_dir / sid
-
+        path = download_data(sid, contrib_md, cache_dir)
         if not path.exists():
             print('could not find folder', str(path))
             continue
