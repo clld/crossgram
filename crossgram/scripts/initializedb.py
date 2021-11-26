@@ -134,6 +134,10 @@ def main(args):
         yyyy, mm, dd = date_match.groups()
         published = date(int(yyyy), int(mm), int(dd))
 
+        # strip off ssh stuff off git link
+        git_https = re.sub(
+            '^git@([^:]*):', r'https://\1/', contrib_md.get('repo') or '')
+
         contrib = data.add(
             models.CrossgramData,
             sid,
@@ -142,7 +146,7 @@ def main(args):
             published=published,
             name=submission.title,
             doi=contrib_md.get('doi'),
-            git_repo=contrib_md.get('repo'),
+            git_repo=git_https,
             description=intro or submission.readme)
 
         submission.add_to_database(data, language_id_map, contrib)
