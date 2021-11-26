@@ -16,6 +16,8 @@ will find it using [cldfcatalog][cldfcatalog].
 
 ### Internal vs external datasets
 
+FIXME at the time of writing this, the public instance doesn't actually exist yet
+
 There are two sets of datasets for Crossgram:  The internal datasets and the
 external datasets.  *External datasets* are the ones that have been released to
 the public.  *Internal datasets* are the ones that are still being worked on and
