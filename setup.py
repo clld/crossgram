@@ -20,7 +20,8 @@ setup(
     zip_safe=False,
     install_requires=[
         'cldfcatalog',
-        'clld>=7.0.0',
+        'clld>=8',
+        'clldmpg>=4.2',
         'clld-glottologfamily-plugin',
         'gitpython',
         'psycopg2',
