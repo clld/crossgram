@@ -10,15 +10,15 @@
 
     <ul class="nav nav-tabs">
         <li class="active"><a href="#about" data-toggle="tab">Introduction</a></li>
-        <li class="active"><a href="#langs" data-toggle="tab">${_('Languages')}</a></li>
+        <li><a href="#langs" data-toggle="tab">${_('Languages')}</a></li>
+        % if ctx.lparameters:
+            <li><a href="#lparams" data-toggle="tab">${_('Parameters')}</a></li>
+        % endif
         % if ctx.constructions:
             <li><a href="#constr" data-toggle="tab">${_('Units')}</a></li>
         % endif
         % if ctx.cparameters:
             <li><a href="#cparams" data-toggle="tab">${_('Unit Parameters')}</a></li>
-        % endif
-        % if ctx.lparameters:
-            <li><a href="#lparams" data-toggle="tab">${_('Parameters')}</a></li>
         % endif
         % if ctx.examples:
             <li><a href="#examples" data-toggle="tab">${_('Sentences')}</a></li>

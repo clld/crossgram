@@ -50,13 +50,13 @@ def main(global_config, **settings):
         LanguageByFamilyMapMarker(), interfaces.IMapMarker)
 
     config.register_menu(
-        ('dataset', partial(menu_item, 'dataset', label='Home')),
+        #('dataset', partial(menu_item, 'dataset', label='Home')),
         ('contributions', partial(menu_item, 'contributions')),
         ('contributors', partial(menu_item, 'contributors')),
+        ('languages', partial(menu_item, 'languages')),
+        ('parameters', partial(menu_item, 'parameters', label='L-Parameters')),
         ('units', partial(menu_item, 'units')),
         ('unitparameters', partial(menu_item, 'unitparameters', label='C-Parameters')),
-        ('parameters', partial(menu_item, 'parameters', label='L-Parameters')),
-        ('languages', partial(menu_item, 'languages')),
         ('sentences', partial(menu_item, 'sentences')),
     )
 
