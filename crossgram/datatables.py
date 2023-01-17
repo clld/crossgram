@@ -75,18 +75,28 @@ class ContributionContributors(DataTable):
 
 class Languages(datatables.Languages):
 
+    __constraints__ = [models.CrossgramData]
+
     def base_query(self, query):
-        return DBSession.query(common.Language) \
+        query = DBSession.query(common.Language) \
             .join(models.ContributionLanguage) \
-            .join(common.Contribution)
+            .join(common.Contribution) \
+            .order_by(common.Language.id)
+        if self.crossgramdata:
+            query = query.filter(
+                common.Contribution.id == self.crossgramdata.id)
+        return query
 
     def col_defs(self):
-        return [
+        # TODO glottocode
+        cols = [
             IdCol(self, 'id'),
             LinkCol(self, 'name'),
             LinkToMapCol(self, 'm'),
-            ContributionsCol(self, 'contributions')
         ]
+        if not self.crossgramdata:
+            cols.append(ContributionsCol(self, 'contributions'))
+        return cols
 
 
 class Constructions(datatables.Units):

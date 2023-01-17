@@ -10,6 +10,7 @@
 
     <ul class="nav nav-tabs">
         <li class="active"><a href="#about" data-toggle="tab">Introduction</a></li>
+        <li class="active"><a href="#langs" data-toggle="tab">${_('Languages')}</a></li>
         % if ctx.constructions:
             <li><a href="#constr" data-toggle="tab">${_('Units')}</a></li>
         % endif
@@ -41,6 +42,9 @@
                     ${ctx.toc or ''|n}
                 </div>
             </div>
+        </div>
+        <div id="langs" class="tab-pane">
+            ${request.get_datatable('languages', h.models.Language, crossgramdata=ctx).render()}
         </div>
         % if ctx.constructions:
         <div id="constr" class="tab-pane">
