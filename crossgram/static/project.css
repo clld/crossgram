@@ -4,6 +4,11 @@ div.tab-content table.dataTable {
     width: 99.5%;
 }
 
+.navbar .brand {
+    padding: 0;
+    margin: 1px;
+}
+
 /* Own sizes within intro */
 div.intro h1 {
     font-size: 24.5px;
