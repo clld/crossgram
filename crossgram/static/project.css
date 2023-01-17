@@ -22,7 +22,7 @@ div.intro h5 {
 }
 
 .leaflet-tooltip {
-    padding: 0.1ex;
+    padding: 0.1ex 0.3ex 0.1ex 0.3ex;
 }
 
 .leaflet-popup-content {
