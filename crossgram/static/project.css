@@ -20,3 +20,7 @@ div.intro h4 {
 div.intro h5 {
     font-size: 11.9px;
 }
+
+.leaflet-tooltip {
+    padding: 0.1ex;
+}
