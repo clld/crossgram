@@ -79,10 +79,9 @@ def main(args):
         description='Crossgram',
         published=date(2019, 12, 12),
         domain='crossgram.clld.org',
-        # XXX Is any of this correct?
-        publisher_name='Max Planck Institute for the Science of Human History',
-        publisher_place='Jena',
-        publisher_url='https://ssh.mpg.de',
+        publisher_name='Max Planck Institute for Evolutionary Anthropology',
+        publisher_place='Leipzig',
+        publisher_url='https://www.eva.mpg.de',
         license='http://creativecommons.org/licenses/by/4.0',
         jsondata={
             'license_icon': 'cc-by.png',

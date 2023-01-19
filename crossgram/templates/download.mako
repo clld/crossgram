@@ -9,7 +9,7 @@
     All datasets on GrossGram are available as <a
     href="https://cldf.clld.org">CLDF</a> datasets.
     The datasets are maintained using the version control system
-    <a href="https://git-scm.com"><em>git</em></a> and make public using
+    <a href="https://git-scm.com"><em>git</em></a> and made public using
     a hosting site for git repositories – usually
     <a href="https://github.com/cldf-datasets">Github</a>.
     Citeable snapshots of the datasets reside on
