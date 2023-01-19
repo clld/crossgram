@@ -41,7 +41,7 @@
                 <td>
                     % if contrib.doi:
                     <a href="https://doi.org/${contrib.doi}">
-                        <img src="https://zenodo.org/badge/DOI/${contrib.doi}.svg" alt="DOI">
+                        DOI: ${contrib.doi}
                     </a>
                     % endif
                 </td>
