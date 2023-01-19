@@ -12,7 +12,8 @@ from clld.web.datatables.contribution import ContributorsCol, CitationCol
 from clld.web.datatables.contributor import NameCol, ContributionsCol, AddressCol
 from clld.web.datatables.sentence import TsvCol
 from clld.web.datatables.unitvalue import UnitValueNameCol
-from clld.web.util.helpers import linked_references
+from clld.web.datatables.value import ValueNameCol, ValueSetCol
+from clld.web.util.helpers import external_link, linked_references
 
 from crossgram import models
 
@@ -29,6 +30,18 @@ class DateCol(Col):
     __kw__ = {'bSearchable': False}
 
 
+class GlottocodeCol(Col):
+    def format(self, item):
+        item = self.get_obj(item)
+        if item.glottocode:
+            return external_link(
+                'http://glottolog.org/resource/languoid/id/' + item.glottocode,
+                label=item.glottocode,
+                title='Language information at Glottolog')
+        else:
+            return ''
+
+
 class RefsCol(Col):
 
     """Column listing linked sources."""
@@ -43,20 +56,20 @@ class RefsCol(Col):
 class CrossgramDatasets(DataTable):
 
     def col_defs(self):
-        return [
-            NumberCol(self, 'number', model_col=models.CrossgramData.number),
-            LinkCol(self, 'name'),
-            ContributorsCol(self, 'contributor'),
-            DateCol(self, 'published'),
-            Col(
-                self,
-                'data_source',
-                bSearchable=False,
-                bSortable=False,
-                sTitle='Data source',
-                format=lambda i: i.doi_link() or i.git_link()),
-            CitationCol(self, 'cite'),
-        ]
+        number = NumberCol(
+            self, 'number', model_col=models.CrossgramData.number)
+        name = LinkCol(self, 'name')
+        contributors = ContributorsCol(self, 'contributor')
+        date = DateCol(self, 'published')
+        data_link = Col(
+            self,
+            'data_source',
+            bSearchable=False,
+            bSortable=False,
+            sTitle='Data source',
+            format=lambda i: i.doi_link() or i.git_link())
+        cite_button = CitationCol(self, 'cite')
+        return [number, name, contributors, date, data_link, cite_button]
 
 
 class ContributionContributors(DataTable):
@@ -66,11 +79,10 @@ class ContributionContributors(DataTable):
             .join(common.Contribution)
 
     def col_defs(self):
-        return [
-            NameCol(self, 'name'),
-            ContributionsCol(self, 'Contributions'),
-            AddressCol(self, 'address'),
-        ]
+        name = NameCol(self, 'name')
+        contributions = ContributionsCol(self, 'Contributions')
+        address = AddressCol(self, 'address')
+        return [name, contributions, address]
 
 
 class Languages(datatables.Languages):
@@ -78,25 +90,28 @@ class Languages(datatables.Languages):
     __constraints__ = [models.CrossgramData]
 
     def base_query(self, query):
-        query = DBSession.query(common.Language) \
+        query = query \
             .join(models.ContributionLanguage) \
-            .join(common.Contribution) \
-            .order_by(common.Language.id)
+            .join(common.Contribution)
         if self.crossgramdata:
             query = query.filter(
                 common.Contribution.id == self.crossgramdata.id)
         return query
 
     def col_defs(self):
-        # TODO glottocode
-        cols = [
-            IdCol(self, 'id'),
-            LinkCol(self, 'name'),
-            LinkToMapCol(self, 'm'),
-        ]
-        if not self.crossgramdata:
-            cols.append(ContributionsCol(self, 'contributions'))
-        return cols
+        # XXX is the ID really necessary?
+        # (maybe for cases where the name is the same?)
+        id_ = Col(self, 'id', sTitle='ID', input_size='mini')
+        name = LinkCol(self, 'name')
+        # NOTE: can't be named 'glottocode' because Language.glottocode is a
+        # Python property instead of a sqlalchemy table column.
+        glottocode = GlottocodeCol(self, 'glottocode_col', sTitle='Glottocode')
+        linktomap = LinkToMapCol(self, 'm')
+        if self.crossgramdata:
+            return [id_, name, glottocode, linktomap]
+        else:
+            contrib = ContributionsCol(self, 'contributions')
+            return [id_, name, glottocode, contrib, linktomap]
 
 
 class Constructions(datatables.Units):
@@ -110,6 +125,7 @@ class Constructions(datatables.Units):
                 .options(joinedload(models.Construction.contribution))
         if self.crossgramdata:
             query = query.filter(models.Construction.contribution == self.crossgramdata)
+        # FIXME: this breaks sorting
         if not self.language:
             query = query.order_by(common.Language.name)
         return query
@@ -197,29 +213,97 @@ class LParameters(datatables.Parameters):
     __constraints__ = [models.CrossgramData]
 
     def base_query(self, query):
-        query = super()\
-                .base_query(query)\
-                .join(models.CrossgramData)\
-                .options(joinedload(models.LParameter.contribution))
+        query = query \
+            .join(models.CrossgramData) \
+            .join(models.LParameter.contribution)
         if self.crossgramdata:
             query = query.filter(models.LParameter.contribution == self.crossgramdata)
         return query
 
     def col_defs(self):
-        cols = [
-            DetailsRowLinkCol(self, 'd'),
-        ]
-        if not self.crossgramdata:
-            cols.append(LinkCol(
+        name = LinkCol(self, 'name')
+        desc = Col(self, 'description')
+        details =  DetailsRowLinkCol(self, 'd')
+        if self.crossgramdata:
+            return [name, desc, details]
+        else:
+            contrib = LinkCol(
                 self,
                 'contribution',
                 model_col=models.CrossgramData.name,
-                get_obj=lambda i: i.contribution))
-        cols.extend([
-            LinkCol(self, 'name'),
-            Col(self, 'description')
-        ])
-        return cols
+                get_obj=lambda i: i.contribution)
+            return [contrib, name, desc, details]
+
+
+class LValues(datatables.Values):
+
+    __constraints__ = [common.Parameter, common.Contribution, common.Language]
+
+    def base_query(self, query):
+        query = DBSession.query(common.Value) \
+            .join(common.Value.domainelement, isouter=True) \
+            .join(common.ValueSet) \
+            .join(common.ValueSet.references, isouter=True) \
+            .join(common.ValueSetReference.source, isouter=True)
+
+        if self.parameter:
+            query = query.filter(
+                common.ValueSet.parameter_pk == self.parameter.pk)
+        else:
+            query = query.join(common.ValueSet.parameter)
+
+        if self.language:
+            query = query.filter(
+                common.ValueSet.language_pk == self.language.pk)
+        else:
+            query = query.join(common.ValueSet.language)
+
+        if self.contribution:
+            query = query.filter(
+                common.ValueSet.contribution_pk == self.contribution.pk)
+        else:
+            query = query.join(common.ValueSet.contribution)
+
+        return query
+
+    def col_defs(self):
+        value = ValueNameCol(self, 'value')
+        if self.parameter and self.parameter.domain:
+            value.choices = [de.name for de in self.parameter.domain]
+
+        lang = LinkCol(
+            self,
+            'language',
+            model_col=common.Language.name,
+            get_object=lambda i: i.valueset.language)
+        param = LinkCol(
+            self,
+            'parameter',
+            sTitle=self.req.translate('Parameter'),
+            model_col=common.Parameter.name,
+            get_object=lambda i: i.valueset.parameter)
+        contrib = LinkCol(
+            self,
+            'contribution',
+            model_col=common.Contribution.name,
+            get_object=lambda i: i.valueset.contribution)
+        sources = RefsCol(self, 'source')
+        details = DetailsRowLinkCol(self, 'd')
+
+        # XXX: can `parameter` and `language` be set at the same time?
+        # XXX: is `contribution` *ever* set in crossgram?
+        if self.parameter:
+            link_to_map = LinkToMapCol(
+                self, 'm', get_object=lambda i: i.valueset.language)
+            # XXX add contribution col?
+            return [lang, value, sources, details, link_to_map]
+        elif self.language:
+            return [param, value, sources, contrib, details]
+        else:
+            # XXX why valueset?
+            valueset = ValueSetCol(
+                self, 'valueset', bSearchable=False, bSortable=False)
+            return [lang, param, valueset, sources, contrib, details]
 
 
 class Examples(datatables.Sentences):
@@ -289,6 +373,7 @@ def includeme(config):
     config.register_datatable('languages', Languages)
     config.register_datatable('parameters', LParameters)
     config.register_datatable('sentences', Examples)
+    config.register_datatable('values', LValues)
     config.register_datatable('unitparameters', CParameters)
     config.register_datatable('units', Constructions)
     config.register_datatable('unitvalues', CValues)
