@@ -119,33 +119,41 @@ class Constructions(datatables.Units):
     __constraints__ = [common.Language, models.CrossgramData]
 
     def base_query(self, query):
-        query = super()\
-                .base_query(query)\
-                .join(models.CrossgramData)\
-                .options(joinedload(models.Construction.contribution))
+        query = DBSession.query(models.Construction)
+
         if self.crossgramdata:
-            query = query.filter(models.Construction.contribution == self.crossgramdata)
-        # FIXME: this breaks sorting
-        if not self.language:
-            query = query.order_by(common.Language.name)
+            query = query.filter(
+                models.Construction.contribution_pk == self.crossgramdata.pk)
+        else:
+            query = query.join(models.Construction.contribution)
+
+        if self.language:
+            query = query.filter(
+                models.Construction.language_pk == self.language.pk)
+        else:
+            query = query.join(models.Construction.language)
+
         return query
 
     def col_defs(self):
-        cols= [
-            LinkCol(
-                self, 'language', model_col=common.Language.name,
-                get_obj=lambda i: i.language),
-            LinkCol(self, 'name'),
-            Col(self, 'description'),
-        ]
-        if not self.crossgramdata:
-            cols.append(LinkCol(
-                self,
-                'contribution',
-                model_col=models.CrossgramData.name,
-                get_obj=lambda i: i.contribution,
-                choices=get_distinct_values(models.CrossgramData.name)))
-        return cols
+        language = LinkCol(
+            self, 'language', model_col=common.Language.name,
+            get_obj=lambda i: i.language)
+        name = LinkCol(self, 'name')
+        desc = Col(self, 'description')
+        contrib = LinkCol(
+            self,
+            'contribution',
+            model_col=models.CrossgramData.name,
+            get_obj=lambda i: i.contribution,
+            choices=get_distinct_values(models.CrossgramData.name))
+
+        if self.crossgramdata:
+            return [language, name, desc]
+        elif self.language:
+            return [name, desc, contrib]
+        else:
+            return [language, name, desc, contrib]
 
 
 class CParameters(datatables.Unitparameters):
@@ -153,59 +161,111 @@ class CParameters(datatables.Unitparameters):
     __constraints__ = [models.CrossgramData]
 
     def base_query(self, query):
-        query = super()\
-                .base_query(query)\
-                .join(models.CrossgramData)\
-                .options(joinedload(models.CParameter.contribution))
+        query = DBSession.query(models.CParameter)
         if self.crossgramdata:
-            query = query.filter(models.CParameter.contribution == self.crossgramdata)
+            query = query.filter(
+                models.CParameter.contribution_pk == self.crossgramdata.pk)
+        else:
+            query.join(models.CParameter.contribution)
         return query
 
     def col_defs(self):
-        cols = [DetailsRowLinkCol(self, 'd')]
-        if not self.crossgramdata:
-            cols.append(LinkCol(
+        name = LinkCol(self, 'name')
+        desc = Col(self, 'description')
+        details = DetailsRowLinkCol(self, 'd')
+        if self.crossgramdata:
+            return [name, desc, details]
+        else:
+            # FIXME AAAAHHHHH why does the search/filter not work!?
+            #  * Database layout is parallel to LParameters
+            #  * Query is parallel to LParameters
+            #  * Column defs are parallel to LParameters
+            # Every thing is the same.  You can take the code and put it
+            # side by side and it's identical.  Still, one works the other
+            # doesn't!  WHYYYYYYYY???
+            contrib = LinkCol(
                 self,
                 'contribution',
                 model_col=models.CrossgramData.name,
-                get_obj=lambda i: i.contribution))
-        cols.extend([
-            LinkCol(self, 'name'),
-            Col(self, 'description')])
-        return cols
+                get_obj=lambda i: i.contribution)
+            return [name, desc, contrib, details]
 
 
 class CValues(datatables.Unitvalues):
 
+    __constraints__ = [
+        common.Unit,
+        common.UnitParameter,
+        common.Contribution,
+        common.Language]
+
     def base_query(self, query):
-        query = super().base_query(query)
-        q = query.options(
-            joinedload(common.UnitValue.references)\
-                .joinedload(models.UnitValueReference.source))
-        return q
+        query = DBSession.query(common.UnitValue) \
+            .join(common.UnitValue.unit) \
+            .join(common.UnitValue.unitdomainelement, isouter=True) \
+            .join(common.UnitValue.references, isouter=True) \
+            .join(models.UnitValueReference.source, isouter=True)
+
+        if self.unitparameter:
+            query = query.filter(
+                common.UnitValue.unitparameter_pk == self.unitparameter.pk)
+        else:
+            query = query.join(common.UnitValue.unitparameter)
+
+        if self.contribution:
+            query = query.filter(
+                common.UnitValue.contribution_pk == self.contribution.pk)
+        else:
+            query = query.join(common.UnitValue.contribution)
+
+        if self.language:
+            query = query.filter(
+                common.Unit.language_pk == self.language.pk)
+        else:
+            query = query.join(common.Unit.language)
+
+        if self.unit:
+            query = query.filter(
+                common.UnitValue.unit_pk == self.unit.pk)
+
+        return query
 
     def col_defs(self):
-        cols = []
-        if not self.unitparameter:
-            cols.append(LinkCol(
-                self, 'unitparameter',
-                model_col=models.CParameter.name,
-                get_obj=lambda i: i.unitparameter,
-                sTitle='Construction Parameter'))
-        if not self.unit:
-            cols.append(LinkCol(
-                self, 'unit',
-                get_obj=lambda i: i.unit, model_col=common.Unit.name))
-        cols.extend((
-            UnitValueNameCol(self, 'value'),
-            RefsCol(self, 'source')))
-        if not self.unitparameter and not self.unit and not self.contribution:
-            cols.append(LinkCol(
-                self,
-                'contribution',
-                model_col=models.CrossgramData.name,
-                get_obj=lambda i: i.contribution))
-        return cols
+        cvalue = UnitValueNameCol(self, 'value')
+        if self.unitparameter and self.unitparameter.domain:
+            cvalue.choices = [de.name for de in self.unitparameter.domain]
+
+        constr = LinkCol(
+            self, 'unit',
+            get_obj=lambda i: i.unit, model_col=common.Unit.name)
+        lang = LinkCol(
+            self, 'language',
+            get_obj=lambda i: i.unit.language,
+            model_col=common.Language.name)
+        cparam = LinkCol(
+            self, 'unitparameter',
+            model_col=models.CParameter.name,
+            get_obj=lambda i: i.unitparameter,
+            sTitle='Construction Parameter')
+        source = RefsCol(self, 'source')
+        contrib = LinkCol(
+            self,
+            'contribution',
+            model_col=models.Contribution.name,
+            get_obj=lambda i: i.contribution,
+            choices=get_distinct_values(models.Contribution.name))
+
+        # XXX: is `contribution` ever set?
+        # XXX: can `unitparameter` and `language` be set at the same time?
+        # ^ that might actually make sense
+        if self.unitparameter:
+            return [lang, constr, cvalue, source, contrib]
+        elif self.unit:
+            return [cparam, cvalue, source]
+        elif self.language:
+            return [constr, cparam, cvalue, source, contrib]
+        else:
+            return [lang, constr, cparam, cvalue, source, contrib]
 
 
 class LParameters(datatables.Parameters):
@@ -213,11 +273,12 @@ class LParameters(datatables.Parameters):
     __constraints__ = [models.CrossgramData]
 
     def base_query(self, query):
-        query = query \
-            .join(models.CrossgramData) \
-            .join(models.LParameter.contribution)
+        query = DBSession.query(models.LParameter)
         if self.crossgramdata:
-            query = query.filter(models.LParameter.contribution == self.crossgramdata)
+            query = query.filter(
+                models.LParameter.contribution_pk == self.crossgramdata.pk)
+        else:
+            query = query.join(models.LParameter.contribution)
         return query
 
     def col_defs(self):
@@ -232,7 +293,7 @@ class LParameters(datatables.Parameters):
                 'contribution',
                 model_col=models.CrossgramData.name,
                 get_obj=lambda i: i.contribution)
-            return [contrib, name, desc, details]
+            return [name, desc, contrib, details]
 
 
 class LValues(datatables.Values):
@@ -290,8 +351,9 @@ class LValues(datatables.Values):
         sources = RefsCol(self, 'source')
         details = DetailsRowLinkCol(self, 'd')
 
-        # XXX: can `parameter` and `language` be set at the same time?
         # XXX: is `contribution` *ever* set in crossgram?
+        # XXX: can `parameter` and `language` be set at the same time?
+        # ^ that would return a single value…
         if self.parameter:
             link_to_map = LinkToMapCol(
                 self, 'm', get_object=lambda i: i.valueset.language)
