@@ -104,8 +104,9 @@ def map_cols(mapping, col):
 def _merge_field(pair):
     k, v = pair
     if k in ('Analyzed_Word', 'Gloss', 'Source'):
-        return k, '\t'.join(v)
-    return k, v
+        return k, '\t'.join((elem or '') for elem in v)
+    else:
+        return k, v
 
 
 def _merge_glosses(col):
