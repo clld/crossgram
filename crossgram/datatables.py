@@ -6,7 +6,7 @@ from clld.db.util import get_distinct_values
 
 from clld.web import datatables
 from clld.web.datatables.base import (
-    Col, DataTable, DetailsRowLinkCol, IdCol, LinkCol, LinkToMapCol,
+    Col, DataTable, DetailsRowLinkCol, LinkCol, LinkToMapCol,
 )
 from clld.web.datatables.contribution import ContributorsCol, CitationCol
 from clld.web.datatables.contributor import NameCol, ContributionsCol, AddressCol
@@ -79,13 +79,13 @@ class CrossgramDatasets(DataTable):
 class ContributionContributors(DataTable):
     def base_query(self, query):
         return DBSession.query(common.Contributor) \
-            .join(common.ContributionContributor) \
-            .join(common.Contribution)
+            .join(common.Contributor.contribution_assocs) \
+            .join(common.ContributionContributor.contribution)
 
     def col_defs(self):
         name = NameCol(self, 'name')
         contributions = ContributionsCol(self, 'Contributions')
-        address = AddressCol(self, 'address', 'Affiliation')
+        address = AddressCol(self, 'address', sTitle='Affiliation')
         return [name, contributions, address]
 
 
@@ -423,8 +423,8 @@ class Sources(datatables.Sources):
 
         if self.language:
             query = query\
-                .join(LanguageSource)\
-                .filter(LanguageSource.language_pk == self.language.pk)
+                .join(common.LanguageSource)\
+                .filter(common.LanguageSource.language_pk == self.language.pk)
 
         if self.crossgramdata:
             query = query.filter(
