@@ -57,6 +57,7 @@ def main(global_config, **settings):
         ('units', partial(menu_item, 'units')),
         #('unitparameters', partial(menu_item, 'unitparameters', label='C-Parameters')),
         ('sentences', partial(menu_item, 'sentences')),
+        ('sources', partial(menu_item, 'sources')),
         ('contributors', partial(menu_item, 'contributors')),
     )
 
