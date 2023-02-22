@@ -27,7 +27,10 @@ class NumberCol(Col):
 
 
 class DateCol(Col):
-    __kw__ = {'bSearchable': False}
+    __kw__ = {'bSearchable': False, 'sTitle': 'Year'}
+
+    def format(self, item):
+        return item.published.year
 
 
 class GlottocodeCol(Col):
