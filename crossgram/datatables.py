@@ -62,7 +62,7 @@ class CrossgramDatasets(DataTable):
         number = NumberCol(
             self, 'number', model_col=models.CrossgramData.number)
         name = LinkCol(self, 'name')
-        contributors = ContributorsCol(self, 'contributor')
+        contributors = ContributorsCol(self, 'contributor', sTitle='Authors')
         date = DateCol(self, 'published')
         data_link = Col(
             self,
