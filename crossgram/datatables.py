@@ -13,6 +13,7 @@ from clld.web.datatables.contributor import NameCol, ContributionsCol, AddressCo
 from clld.web.datatables.sentence import TsvCol
 from clld.web.datatables.unitvalue import UnitValueNameCol
 from clld.web.datatables.value import ValueNameCol, ValueSetCol
+from clld_glottologfamily_plugin.datatables import FamilyCol
 from clld.web.util.helpers import external_link, linked_references
 from clld.web.util.htmllib import HTML
 
@@ -94,28 +95,35 @@ class Languages(datatables.Languages):
     __constraints__ = [models.CrossgramData]
 
     def base_query(self, query):
-        query = query \
-            .join(models.ContributionLanguage) \
-            .join(common.Contribution)
+        # TODO doesn't work the way I want it to
+        # -> the contribution list fires ad-hoc SQL queries...
+        query = DBSession.query(models.Variety) \
+            .join(models.Variety.family, isouter=True) \
+            .join(models.Variety.contribution_assocs, isouter=True)
+
         if self.crossgramdata:
             query = query.filter(
-                common.Contribution.id == self.crossgramdata.id)
+                models.ContributionLanguage.contribution_pk
+                == self.crossgramdata.pk)
+        else:
+            query = query.join(
+                models.ContributionLanguage.contribution,
+                isouter=True)
+
         return query
 
     def col_defs(self):
-        # XXX is the ID really necessary?
-        # (maybe for cases where the name is the same?)
-        id_ = Col(self, 'id', sTitle='ID', input_size='mini')
         name = LinkCol(self, 'name')
         # NOTE: can't be named 'glottocode' because Language.glottocode is a
         # Python property instead of a sqlalchemy table column.
         glottocode = GlottocodeCol(self, 'glottocode_col', sTitle='Glottocode')
+        family = FamilyCol(self, 'family', models.Variety)
         linktomap = LinkToMapCol(self, 'm')
         if self.crossgramdata:
-            return [id_, name, glottocode, linktomap]
+            return [name, glottocode, family, linktomap]
         else:
             contrib = ContributionsCol(self, 'contributions')
-            return [id_, name, glottocode, contrib, linktomap]
+            return [name, glottocode, family, contrib, linktomap]
 
 
 class Constructions(datatables.Units):
