@@ -142,7 +142,7 @@ class Constructions(datatables.Units):
         language = LinkCol(
             self, 'language', model_col=common.Language.name,
             get_obj=lambda i: i.language)
-        name = LinkCol(self, 'name')
+        name = LinkCol(self, 'name', sTitle='Construction')
         desc = Col(self, 'description')
         contrib = LinkCol(
             self,
@@ -173,7 +173,7 @@ class CParameters(datatables.Unitparameters):
         return query
 
     def col_defs(self):
-        name = LinkCol(self, 'name')
+        name = LinkCol(self, 'name', sTitle='C-Parameter')
         desc = Col(self, 'description')
         details = DetailsRowLinkCol(self, 'd')
         if self.crossgramdata:
