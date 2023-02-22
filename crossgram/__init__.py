@@ -52,12 +52,12 @@ def main(global_config, **settings):
     config.register_menu(
         #('dataset', partial(menu_item, 'dataset', label='Home')),
         ('contributions', partial(menu_item, 'contributions')),
-        ('contributors', partial(menu_item, 'contributors')),
         ('languages', partial(menu_item, 'languages')),
         ('parameters', partial(menu_item, 'parameters', label='L-Parameters')),
         ('units', partial(menu_item, 'units')),
-        ('unitparameters', partial(menu_item, 'unitparameters', label='C-Parameters')),
+        #('unitparameters', partial(menu_item, 'unitparameters', label='C-Parameters')),
         ('sentences', partial(menu_item, 'sentences')),
+        ('contributors', partial(menu_item, 'contributors')),
     )
 
     for if_ in [interfaces.IRepresentation, interfaces.IMetadata]:
