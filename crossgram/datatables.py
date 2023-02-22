@@ -382,30 +382,35 @@ class Examples(datatables.Sentences):
         return query.order_by(models.Language.name)
 
     def col_defs(self):
-        cols = [
-            LinkCol(
-                self,
-                'language',
-                model_col=common.Language.name,
-                get_obj=lambda i: i.language,
-                bSortable=not self.language,
-                bSearchable=not self.language),
-            LinkCol(self, 'name', sTitle='Primary text', sClass="object-language"),
-            TsvCol(self, 'analyzed', sTitle='Analyzed text'),
-            TsvCol(self, 'gloss', sClass="gloss"),
-            Col(self,
-                'description',
-                sTitle=self.req.translate('Translation'),
-                sClass="translation"),
-            DetailsRowLinkCol(self, 'd'),
-        ]
-        if not self.crossgramdata:
-            cols.append(LinkCol(
+        language = LinkCol(
+            self,
+            'language',
+            model_col=common.Language.name,
+            get_obj=lambda i: i.language,
+            bSortable=not self.language,
+            bSearchable=not self.language)
+        primary = LinkCol(
+            self, 'name', sTitle='Primary text', sClass="object-language")
+        analyzed = TsvCol(self, 'analyzed', sTitle='Analyzed text')
+        gloss = TsvCol(self, 'gloss', sClass="gloss")
+        translation = Col(
+            self,
+            'description',
+            sTitle=self.req.translate('Translation'),
+            sClass="translation")
+        details = DetailsRowLinkCol(self, 'd')
+
+        if self.crossgramdata:
+            return [language, primary, analyzed, gloss, translation, details]
+        else:
+            contrib = LinkCol(
                 self,
                 'contribution',
                 model_col=models.CrossgramData.name,
-                get_obj=lambda i: i.contribution))
-        return cols
+                get_obj=lambda i: i.contribution)
+            return [
+                language, primary, analyzed, gloss, translation, contrib,
+                details]
 
 
 class Sources(datatables.Sources):
