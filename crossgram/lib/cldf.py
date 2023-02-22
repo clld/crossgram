@@ -1,25 +1,20 @@
 from collections import namedtuple, OrderedDict
-from datetime import date
 from itertools import chain
-import pathlib
 import re
 
-from clld.cliutil import Data, bibtex2source
+from clld.cliutil import bibtex2source
 from clld.lib import bibtex
 from clld.web.icon import ORDERED_ICONS
 from clldutils import jsonlib
 from clldutils.misc import slug
 from nameparser import HumanName
 from pycldf import iter_datasets
-from pycldf.dataset import StructureDataset
 
 from clld.db.meta import DBSession
 from clld.db.models import (
     ContributionContributor,
     Contributor,
     DomainElement,
-    DomainElement_data,
-    Language,
     UnitDomainElement,
     UnitValue,
     SentenceReference,
@@ -29,7 +24,6 @@ from clld.db.models import (
     ValueSetReference,
 )
 from crossgram.models import (
-    CrossgramData,
     Variety,
     Construction,
     ContributionLanguage,
@@ -143,7 +137,8 @@ class CLDFBenchSubmission:
             number = 1
             new_id = id_candidate
             lang = data['Variety'].get(new_id)
-            while (lang
+            while (
+                lang
                 and new_id in local_lang_ids
                 and slug(lang.name) != slug(language_row.get('Name'))
             ):

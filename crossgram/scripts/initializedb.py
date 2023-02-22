@@ -4,7 +4,6 @@ from collections import OrderedDict
 from itertools import cycle, groupby
 import pathlib
 import re
-import sys
 
 from datetime import date
 
@@ -128,7 +127,7 @@ def main(args):
 
         submission = CLDFBenchSubmission.load(path, contrib_md)
 
-        date_match = re.fullmatch('(\d+)-(\d+)-(\d+)', contrib_md['published'])
+        date_match = re.fullmatch(r'(\d+)-(\d+)-(\d+)', contrib_md['published'])
         assert date_match
         yyyy, mm, dd = date_match.groups()
         published = date(int(yyyy), int(mm), int(dd))

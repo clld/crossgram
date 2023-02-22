@@ -16,9 +16,11 @@ class MetadataFromRec(Base):
             return bibtex.Record(
                 'article',
                 '{}-{}'.format(req.dataset.id, ctx.id),
-                author = [
+                author=[
                     c.name
-                    for c in chain(ctx.primary_contributors, ctx.secondary_contributors)],
+                    for c in chain(
+                        ctx.primary_contributors,
+                        ctx.secondary_contributors)],
                 year=str(ctx.published.year),
                 title=getattr(ctx, 'citation_name', str(ctx)),
                 journal=req.dataset.description,

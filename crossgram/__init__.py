@@ -1,4 +1,3 @@
-import itertools
 from functools import partial
 
 from pyramid.config import Configurator
@@ -7,10 +6,10 @@ from clld.web.app import menu_item
 from clld_glottologfamily_plugin import util
 
 # we must make sure custom models are known at database initialization!
-from crossgram import models, md
+from crossgram import models, md  # noqa: F401
 
 
-_ = lambda s: s
+_ = lambda s: s  # noqa: E731
 _('Sentence')
 _('Sentences')
 _('Contributor')
@@ -50,12 +49,12 @@ def main(global_config, **settings):
         LanguageByFamilyMapMarker(), interfaces.IMapMarker)
 
     config.register_menu(
-        #('dataset', partial(menu_item, 'dataset', label='Home')),
+        # ('dataset', partial(menu_item, 'dataset', label='Home')),
         ('contributions', partial(menu_item, 'contributions')),
         ('languages', partial(menu_item, 'languages')),
         ('parameters', partial(menu_item, 'parameters', label='L-Parameters')),
         ('units', partial(menu_item, 'units')),
-        #('unitparameters', partial(menu_item, 'unitparameters', label='C-Parameters')),
+        # ('unitparameters', partial(menu_item, 'unitparameters', label='C-Parameters')),
         ('sentences', partial(menu_item, 'sentences')),
         ('sources', partial(menu_item, 'sources')),
         ('contributors', partial(menu_item, 'contributors')),
