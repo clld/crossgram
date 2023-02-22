@@ -14,6 +14,7 @@ from clld.web.datatables.sentence import TsvCol
 from clld.web.datatables.unitvalue import UnitValueNameCol
 from clld.web.datatables.value import ValueNameCol, ValueSetCol
 from clld.web.util.helpers import external_link, linked_references
+from clld.web.util.htmllib import HTML
 
 from crossgram import models
 
@@ -418,23 +419,41 @@ class Sources(datatables.Sources):
     __constraints__ = [common.Language, models.CrossgramData]
 
     def base_query(self, query):
-        query = super().base_query(query)
-        if self.crossgramdata:
-            # FIXME Sorting by contribution throws an error
+        query = DBSession.query(models.CrossgramDataSource)
+
+        if self.language:
             query = query\
-                .join(models.CrossgramDataSource)\
-                .filter(models.CrossgramDataSource.contribution == self.crossgramdata)
+                .join(LanguageSource)\
+                .filter(LanguageSource.language_pk == self.language.pk)
+
+        if self.crossgramdata:
+            query = query.filter(
+                models.CrossgramDataSource.contribution_pk
+                == self.crossgramdata.pk)
+        else:
+            query = query.join(models.CrossgramDataSource.contribution)
+
         return query
 
     def col_defs(self):
-        cols = super().col_defs()
-        if not self.crossgramdata:
-            cols.append(LinkCol(
+        details = DetailsRowLinkCol(self, 'd')
+        name = LinkCol(self, 'name')
+        title = Col(
+            self,
+            'description',
+            sTitle='Title',
+            format=lambda i: HTML.span(i.description))
+        author = Col(self, 'author')
+        year = Col(self, 'year')
+        if self.crossgramdata:
+            return [details, name, title, author, year]
+        else:
+            contrib = LinkCol(
                 self,
                 'contribution',
                 model_col=models.CrossgramData.name,
-                get_obj=lambda i: i.contribution))
-        return cols
+                get_obj=lambda i: i.contribution)
+            return [details, name, title, author, year, contrib]
 
 
 def includeme(config):
