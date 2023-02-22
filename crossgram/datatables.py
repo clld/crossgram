@@ -84,7 +84,7 @@ class ContributionContributors(DataTable):
     def col_defs(self):
         name = NameCol(self, 'name')
         contributions = ContributionsCol(self, 'Contributions')
-        address = AddressCol(self, 'address')
+        address = AddressCol(self, 'address', 'Affiliation')
         return [name, contributions, address]
 
 
@@ -285,18 +285,18 @@ class LParameters(datatables.Parameters):
         return query
 
     def col_defs(self):
-        name = LinkCol(self, 'name')
+        name = LinkCol(self, 'name', sTitle='L-Parameter')
         desc = Col(self, 'description')
-        details =  DetailsRowLinkCol(self, 'd')
+        details = DetailsRowLinkCol(self, 'd')
         if self.crossgramdata:
-            return [name, desc, details]
+            return [details, name, desc]
         else:
             contrib = LinkCol(
                 self,
                 'contribution',
                 model_col=models.CrossgramData.name,
                 get_obj=lambda i: i.contribution)
-            return [name, desc, contrib, details]
+            return [details, name, desc, contrib]
 
 
 class LValues(datatables.Values):
