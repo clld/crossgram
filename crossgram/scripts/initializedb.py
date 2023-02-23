@@ -207,6 +207,7 @@ def prime_cache(args):
         if lang.id not in languoids:
             continue
         languoid = languoids[lang.id]
+        lang.glottolog_id = languoid.id
         lang.name = languoid.name
         lang.latitude = languoid.latitude
         lang.longitude = languoid.longitude

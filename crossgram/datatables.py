@@ -14,6 +14,7 @@ from clld.web.datatables.sentence import TsvCol
 from clld.web.datatables.unitvalue import UnitValueNameCol
 from clld.web.datatables.value import ValueNameCol, ValueSetCol
 from clld_glottologfamily_plugin.datatables import FamilyCol
+from clld_glottologfamily_plugin.models import Family
 from clld.web.util.helpers import external_link, linked_references
 from clld.web.util.htmllib import HTML
 
@@ -38,10 +39,11 @@ class DateCol(Col):
 class GlottocodeCol(Col):
     def format(self, item):
         item = self.get_obj(item)
-        if item.glottocode:
+        if item.glottolog_id:
             return external_link(
-                'http://glottolog.org/resource/languoid/id/' + item.glottocode,
-                label=item.glottocode,
+                'http://glottolog.org/resource/languoid/id/{}'.format(
+                    item.glottolog_id),
+                label=item.glottolog_id,
                 title='Language information at Glottolog')
         else:
             return ''
@@ -98,8 +100,8 @@ class Languages(datatables.Languages):
         # TODO doesn't work the way I want it to
         # -> the contribution list fires ad-hoc SQL queries...
         query = DBSession.query(models.Variety) \
-            .join(models.Variety.family, isouter=True) \
-            .join(models.Variety.contribution_assocs, isouter=True)
+            .join(models.Variety.contribution_assocs, isouter=True) \
+            .options(joinedload(models.Variety.family))
 
         if self.crossgramdata:
             query = query.filter(
