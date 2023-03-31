@@ -19,6 +19,7 @@ from pyglottolog import Glottolog
 
 import git
 from markdown import markdown
+import sqlalchemy
 
 import crossgram
 from crossgram import models
@@ -221,6 +222,32 @@ def prime_cache(args):
             DBSession.add(common.LanguageIdentifier(
                 language=lang,
                 identifier_pk=isocodes[languoid.iso].pk))
+
+    DBSession.flush()
+    print('... done')
+
+    print('Counting things...')
+    DBSession.execute(sqlalchemy.text("""
+        UPDATE lparameter
+        SET language_count = s.c
+        FROM (
+            SELECT parameter_pk, count(distinct(language_pk)) AS c
+            FROM valueset
+            GROUP BY parameter_pk
+        ) AS s
+        WHERE lparameter.pk = s.parameter_pk
+    """))
+    DBSession.execute(sqlalchemy.text("""
+        UPDATE cparameter
+        SET language_count = s.c
+        FROM (
+            SELECT unitparameter_pk, count(distinct(language_pk)) AS c
+            FROM unitvalue
+            JOIN unit ON unit.pk = unitvalue.unit_pk
+            GROUP BY unitparameter_pk
+        ) AS s
+        WHERE cparameter.pk = s.unitparameter_pk
+    """))
 
     DBSession.flush()
     print('... done')

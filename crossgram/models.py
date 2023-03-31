@@ -91,6 +91,7 @@ class CParameter(CustomModelMixin, UnitParameter):
     pk = Column(Integer, ForeignKey('unitparameter.pk'), primary_key=True)
     contribution_pk = Column(Integer, ForeignKey('contribution.pk'))
     contribution = relationship(CrossgramData, backref='cparameters')
+    language_count = Column(Integer)
 
 
 @implementer(interfaces.IParameter)
@@ -98,6 +99,7 @@ class LParameter(CustomModelMixin, Parameter):
     pk = Column(Integer, ForeignKey('parameter.pk'), primary_key=True)
     contribution_pk = Column(Integer, ForeignKey('contribution.pk'))
     contribution = relationship(CrossgramData, backref='lparameters')
+    language_count = Column(Integer)
 
 
 @implementer(interfaces.ISentence)

@@ -1,4 +1,5 @@
 from sqlalchemy.orm import joinedload
+from sqlalchemy.sql.expression import case
 
 from clld.db.meta import DBSession
 from clld.db.models import common
@@ -47,6 +48,22 @@ class GlottocodeCol(Col):
                 title='Language information at Glottolog')
         else:
             return ''
+
+
+class CountCol(Col):
+    __kw__ = {
+        'input_size': 'mini',
+        'sClass': 'right',
+        'bSearchable': False}
+
+    def get_value(self, item):
+        return super().get_value(item) or 0
+
+    def order(self):
+        # When a count is missing, assume there are 0 counted things.
+        return case(
+            [(self.model_col.is_(None), 0)],
+            else_=self.model_col)
 
 
 class MoreIntuitiveValueNameCol(ValueNameCol):
@@ -204,16 +221,21 @@ class CParameters(datatables.Unitparameters):
     def col_defs(self):
         name = LinkCol(self, 'name', sTitle='C-Parameter')
         desc = Col(self, 'description')
+        langcount = CountCol(
+            self,
+            'language_count',
+            model_col=models.CParameter.language_count,
+            sTitle='Representation')
         details = DetailsRowLinkCol(self, 'd')
         if self.crossgramdata:
-            return [details, name, desc]
+            return [details, name, desc, langcount]
         else:
             contrib = LinkCol(
                 self,
                 'contribution',
                 model_col=models.CrossgramData.name,
                 get_obj=lambda i: i.contribution)
-            return [details, name, desc, contrib]
+            return [details, name, desc, langcount, contrib]
 
 
 class CValues(datatables.Unitvalues):
@@ -298,7 +320,6 @@ class LParameters(datatables.Parameters):
     __constraints__ = [models.CrossgramData]
 
     def base_query(self, query):
-        query = query.join(models.LParameter)
         if self.crossgramdata:
             query = query.filter(
                 models.LParameter.contribution_pk == self.crossgramdata.pk)
@@ -309,16 +330,21 @@ class LParameters(datatables.Parameters):
     def col_defs(self):
         name = LinkCol(self, 'name', sTitle='L-Parameter')
         desc = Col(self, 'description')
+        langcount = CountCol(
+            self,
+            'language_count',
+            model_col=models.LParameter.language_count,
+            sTitle='Representation')
         details = DetailsRowLinkCol(self, 'd')
         if self.crossgramdata:
-            return [details, name, desc]
+            return [details, name, desc, langcount]
         else:
             contrib = LinkCol(
                 self,
                 'contribution',
                 model_col=models.CrossgramData.name,
                 get_obj=lambda i: i.contribution)
-            return [details, name, desc, contrib]
+            return [details, name, desc, langcount, contrib]
 
 
 class LValues(datatables.Values):
