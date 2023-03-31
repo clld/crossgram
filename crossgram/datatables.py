@@ -399,9 +399,13 @@ class Examples(datatables.Sentences):
 
     def base_query(self, query):
         query = super().base_query(query)
+
         if self.crossgramdata:
-            query = query.filter(models.Example.contribution == self.crossgramdata)
-        return query.order_by(models.Language.name)
+            query = query.filter(models.Example.contribution_pk == self.crossgramdata.pk)
+        else:
+            query = query.join(models.Example.contribution)
+
+        return query
 
     def col_defs(self):
         language = LinkCol(
@@ -433,6 +437,11 @@ class Examples(datatables.Sentences):
             return [
                 language, primary, analyzed, gloss, translation, contrib,
                 details]
+
+    def get_options(self):
+        # The super class overrides `get_options` to disable default sorting.
+        # I like sorted tables.
+        return {}
 
 
 class Sources(datatables.Sources):
