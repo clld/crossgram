@@ -193,12 +193,12 @@ class CParameters(datatables.Unitparameters):
     __constraints__ = [models.CrossgramData]
 
     def base_query(self, query):
-        query = DBSession.query(models.CParameter)
+        query = query.join(models.CParameter)
         if self.crossgramdata:
             query = query.filter(
                 models.CParameter.contribution_pk == self.crossgramdata.pk)
         else:
-            query.join(models.CParameter.contribution)
+            query = query.join(models.CParameter.contribution)
         return query
 
     def col_defs(self):
@@ -208,13 +208,6 @@ class CParameters(datatables.Unitparameters):
         if self.crossgramdata:
             return [name, desc, details]
         else:
-            # FIXME AAAAHHHHH why does the search/filter not work!?
-            #  * Database layout is parallel to LParameters
-            #  * Query is parallel to LParameters
-            #  * Column defs are parallel to LParameters
-            # Every thing is the same.  You can take the code and put it
-            # side by side and it's identical.  Still, one works the other
-            # doesn't!  WHYYYYYYYY???
             contrib = LinkCol(
                 self,
                 'contribution',
@@ -305,7 +298,7 @@ class LParameters(datatables.Parameters):
     __constraints__ = [models.CrossgramData]
 
     def base_query(self, query):
-        query = DBSession.query(models.LParameter)
+        query = query.join(models.LParameter)
         if self.crossgramdata:
             query = query.filter(
                 models.LParameter.contribution_pk == self.crossgramdata.pk)
