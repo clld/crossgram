@@ -206,14 +206,14 @@ class CParameters(datatables.Unitparameters):
         desc = Col(self, 'description')
         details = DetailsRowLinkCol(self, 'd')
         if self.crossgramdata:
-            return [name, desc, details]
+            return [details, name, desc]
         else:
             contrib = LinkCol(
                 self,
                 'contribution',
                 model_col=models.CrossgramData.name,
                 get_obj=lambda i: i.contribution)
-            return [name, desc, contrib, details]
+            return [details, name, desc, contrib]
 
 
 class CValues(datatables.Unitvalues):
