@@ -118,7 +118,11 @@ class Languages(datatables.Languages):
         name = LinkCol(self, 'name')
         # NOTE: can't be named 'glottocode' because Language.glottocode is a
         # Python property instead of a sqlalchemy table column.
-        glottocode = GlottocodeCol(self, 'glottocode_col', sTitle='Glottocode')
+        glottocode = GlottocodeCol(
+            self,
+            'glottocode_col',
+            model_col=models.Variety.glottolog_id,
+            sTitle='Glottocode')
         family = FamilyCol(self, 'family', models.Variety)
         linktomap = LinkToMapCol(self, 'm')
         if self.crossgramdata:
