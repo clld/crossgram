@@ -2,7 +2,7 @@ from sqlalchemy.orm import joinedload
 
 from clld.db.meta import DBSession
 from clld.db.models import common
-from clld.db.util import get_distinct_values
+from clld.db.util import get_distinct_values, icontains
 
 from clld.web import datatables
 from clld.web.datatables.base import (
@@ -47,6 +47,20 @@ class GlottocodeCol(Col):
                 title='Language information at Glottolog')
         else:
             return ''
+
+
+class MoreIntuitiveValueNameCol(ValueNameCol):
+    """More intuitive value name column (at least for me).
+
+    Searching in the value table returned unexpected results because
+    the column searched the *description* instead of the name shown in
+    the column itself.  This tripped me up a few times.
+    """
+    def search(self, qs):
+        if self.dt.parameter and self.dt.parameter.domain:
+            return common.DomainElement.name.__eq__(qs)
+        else:
+            return icontains(common.Value.name, qs)
 
 
 class RefsCol(Col):
@@ -346,7 +360,7 @@ class LValues(datatables.Values):
         return query
 
     def col_defs(self):
-        value = ValueNameCol(self, 'value')
+        value = MoreIntuitiveValueNameCol(self, 'value', common.Value.name)
         if self.parameter and self.parameter.domain:
             value.choices = [de.name for de in self.parameter.domain]
 
