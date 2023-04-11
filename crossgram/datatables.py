@@ -509,7 +509,7 @@ class Sources(datatables.Sources):
                 'contribution',
                 model_col=models.CrossgramData.name,
                 get_obj=lambda i: i.contribution)
-            return [details, name, title, author, year, contrib]
+            return [name, title, author, year, contrib, details]
 
 
 def includeme(config):
