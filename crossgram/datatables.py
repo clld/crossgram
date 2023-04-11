@@ -355,8 +355,10 @@ class LValues(datatables.Values):
         query = DBSession.query(common.Value) \
             .join(common.Value.domainelement, isouter=True) \
             .join(common.ValueSet) \
-            .join(common.ValueSet.references, isouter=True) \
-            .join(common.ValueSetReference.source, isouter=True)
+            .options(
+                joinedload(common.Value.valueset)
+                .joinedload(common.ValueSet.references)
+                .joinedload(common.ValueSetReference.source))
 
         if self.parameter:
             query = query.filter(
@@ -399,7 +401,7 @@ class LValues(datatables.Values):
             'contribution',
             model_col=common.Contribution.name,
             get_object=lambda i: i.valueset.contribution)
-        sources = RefsCol(self, 'source')
+        sources = RefsCol(self, 'source', get_object=lambda i: i.valueset)
         details = DetailsRowLinkCol(self, 'd')
 
         # XXX: is `contribution` *ever* set in crossgram?
