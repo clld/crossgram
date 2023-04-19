@@ -264,3 +264,35 @@ def prime_cache(args):
 
     DBSession.flush()
     print('... done')
+
+    print('Collecting language sources...')
+
+    language_sources = set(DBSession.execute(
+        sqlalchemy.select(
+            common.ValueSet.language_pk,
+            common.ValueSetReference.source_pk)
+        .join(common.ValueSetReference.valueset)
+        .distinct()))
+    language_sources.update(DBSession.execute(
+        sqlalchemy.select(
+            common.Unit.language_pk,
+            models.UnitValueReference.source_pk)
+        .join(models.UnitValueReference.unitvalue)
+        .join(common.UnitValue.unit)
+        .distinct()))
+    language_sources.update(DBSession.execute(
+        sqlalchemy.select(
+            common.Unit.language_pk,
+            models.UnitReference.source_pk)
+        .join(models.UnitReference.unit)
+        .distinct()))
+    language_sources = sorted(language_sources)
+
+    # delete old associations for idempotency's sake
+    DBSession.execute(sqlalchemy.delete(models.LanguageReference))
+    DBSession.add_all(
+        models.LanguageReference(language_pk=language_pk, source_pk=source_pk)
+        for language_pk, source_pk in language_sources)
+
+    DBSession.flush()
+    print('... done')

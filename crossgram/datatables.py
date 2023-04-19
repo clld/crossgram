@@ -16,7 +16,9 @@ from clld.web.datatables.unitvalue import UnitValueNameCol
 from clld.web.datatables.value import ValueNameCol, ValueSetCol
 from clld_glottologfamily_plugin.datatables import FamilyCol
 from clld_glottologfamily_plugin.models import Family
-from clld.web.util.helpers import external_link, linked_references
+from clld.web.util.helpers import (
+    link, external_link, gbs_link, linked_references,
+)
 from clld.web.util.htmllib import HTML
 
 from crossgram import models
@@ -91,6 +93,69 @@ class RefsCol(Col):
         return linked_references(self.dt.req, vs)
 
 
+def _generate_separators(iterable):
+    first_item = True
+    for item in iterable:
+        if first_item:
+            first_item = False
+        else:
+            yield '; '
+        yield item
+
+
+def semicolon_separated_span(iterable):
+    return HTML.span(*_generate_separators(iterable))
+
+
+class SourceLanguageCol(Col):
+
+    """Column listing linked languages of a source."""
+
+    __kw__ = dict(bSearchable=False, bSortable=False)
+
+    def format(self, item):
+        source = self.get_obj(item)
+        return semicolon_separated_span(
+            link(self.dt.req, ref.language)
+            for ref in source.languagereferences
+            if ref.language)
+
+
+def format_source_reference(req, ref):
+    desc = ': %s' % ref.description if ref.description else ''
+    gbs = gbs_link(ref.source, pages=ref.description)
+    return HTML.span(
+        link(req, ref.source),
+        HTML.span(desc, class_='pages'),
+        ' ' if gbs else '',
+        gbs,
+        class_='citation',
+    )
+
+
+class FilteredLanguageSourcesCol(Col):
+
+    """Column showing sources for a language, filtered by contribution."""
+
+    __kw__ = dict(bSearchable=False, bSortable=False)
+
+    def __init__(self, *args, contribution=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.contribution = contribution
+
+    def in_contribution(self, source):
+        return (
+            self.contribution is None
+            or source.contribution == self.contribution)
+
+    def format(self, item):
+        language = self.get_obj(item)
+        return semicolon_separated_span(
+            format_source_reference(self.dt.req, ref)
+            for ref in language.references
+            if ref.source and self.in_contribution(ref.source))
+
+
 class CrossgramDatasets(DataTable):
 
     def col_defs(self):
@@ -128,11 +193,12 @@ class Languages(datatables.Languages):
     __constraints__ = [models.CrossgramData]
 
     def base_query(self, query):
-        # TODO doesn't work the way I want it to
-        # -> the contribution list fires ad-hoc SQL queries...
         query = DBSession.query(models.Variety) \
-            .join(models.Variety.contribution_assocs, isouter=True) \
-            .options(joinedload(models.Variety.family))
+            .join(models.Variety.family, isouter=True) \
+            .join(models.Variety.contribution_assocs) \
+            .options(
+                joinedload(common.Language.references)
+                .joinedload(models.LanguageReference.source))
 
         if self.crossgramdata:
             query = query.filter(
@@ -154,13 +220,15 @@ class Languages(datatables.Languages):
             'glottocode_col',
             model_col=models.Variety.glottolog_id,
             sTitle='Glottocode')
+        source = FilteredLanguageSourcesCol(
+            self, 'source', contribution=self.crossgramdata)
         family = FamilyCol(self, 'family', models.Variety)
         linktomap = LinkToMapCol(self, 'm')
         if self.crossgramdata:
-            return [name, glottocode, family, linktomap]
+            return [name, glottocode, family, source, linktomap]
         else:
             contrib = ContributionsCol(self, 'contributions')
-            return [name, glottocode, family, contrib, linktomap]
+            return [name, glottocode, family, contrib, source, linktomap]
 
 
 class Constructions(datatables.Units):
@@ -481,8 +549,12 @@ class Sources(datatables.Sources):
 
         if self.language:
             query = query\
-                .join(common.LanguageSource)\
-                .filter(common.LanguageSource.language_pk == self.language.pk)
+                .join(models.CrossgramDataSource.languages)\
+                .filter(common.LanguageReference.language_pk == self.language.pk)
+        else:
+            query = query.options(
+                joinedload(models.CrossgramDataSource.languagereferences)
+                .joinedload(models.LanguageReference.language))
 
         if self.crossgramdata:
             query = query.filter(
@@ -502,16 +574,17 @@ class Sources(datatables.Sources):
             sTitle='Title',
             format=lambda i: HTML.span(i.description))
         author = Col(self, 'author')
+        languages = SourceLanguageCol(self, 'languages')
         year = Col(self, 'year')
         if self.crossgramdata:
-            return [details, name, title, author, year]
+            return [details, name, title, author, year, languages]
         else:
             contrib = LinkCol(
                 self,
                 'contribution',
                 model_col=models.CrossgramData.name,
                 get_obj=lambda i: i.contribution)
-            return [name, title, author, year, contrib, details]
+            return [name, title, author, year, contrib, languages, details]
 
 
 def includeme(config):

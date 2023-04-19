@@ -109,6 +109,14 @@ class Example(CustomModelMixin, Sentence):
     contribution = relationship(CrossgramData, backref='examples')
 
 
+class LanguageReference(Base, HasSourceNotNullMixin):
+
+    __table_args__ = (UniqueConstraint('language_pk', 'source_pk', 'description'),)
+
+    language_pk = Column(Integer, ForeignKey('language.pk'), nullable=False)
+    language = relationship(Language, innerjoin=True, backref='references')
+
+
 class UnitReference(Base, HasSourceNotNullMixin):
 
     __table_args__ = (UniqueConstraint('unit_pk', 'source_pk', 'description'),)
