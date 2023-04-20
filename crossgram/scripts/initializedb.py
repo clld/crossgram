@@ -113,6 +113,9 @@ def main(args):
         print('Loading submission', sid, '...')
 
         contrib_md = jsonlib.load(contrib_dir / 'md.json')
+        if contrib_md.get('hide'):
+            print('... but', sid, "doesn't want to be shown")
+            continue
         intro = None
         try:
             with (contrib_dir / 'intro.md').open(encoding='utf-8') as f:
