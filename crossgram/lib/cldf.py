@@ -14,6 +14,7 @@ from clld.db.meta import DBSession
 from clld.db.models import (
     ContributionContributor,
     Contributor,
+    LanguageSource,
     DomainElement,
     UnitDomainElement,
     UnitValue,
@@ -25,6 +26,7 @@ from clld.db.models import (
 )
 from crossgram.models import (
     Variety,
+    LanguageReference,
     Construction,
     ContributionLanguage,
     Example,
@@ -125,6 +127,16 @@ class CLDFBenchSubmission:
                 self.cldf.get('constructions.csv') or ())
             if row.get('Language_ID')}
 
+        biblio_map = {}
+        if self.sources:
+            for bibrecord in self.sources.records:
+                source = bibtex2source(bibrecord, CrossgramDataSource)
+                old_id = bibrecord.id
+                new_id = '{}-{}'.format(contrib.id, old_id)
+                source.id = new_id
+                source.contribution = contrib
+                biblio_map[old_id] = source
+
         local_lang_ids = set()
         for language_row in self.cldf['LanguageTable']:
             old_id = language_row.get('ID')
@@ -158,6 +170,15 @@ class CLDFBenchSubmission:
             DBSession.flush()
             # TODO add glottocode, iso code, and wals code if available
 
+            for source_string in sorted(set(language_row.get('Source') or ())):
+                st = parse_source(biblio_map, source_string)
+                if set and st.source_pk is not None:
+                    DBSession.add(
+                        LanguageReference(
+                            key=st.bibkey,
+                            description=st.pages,
+                            language_pk=lang.pk,
+                            source_pk=st.source_pk))
             DBSession.add(
                 ContributionLanguage(
                     language_pk=lang.pk,
@@ -187,16 +208,6 @@ class CLDFBenchSubmission:
                 primary=spec.get('primary', True),
                 contribution=contrib,
                 contributor=author))
-
-        biblio_map = {}
-        if self.sources:
-            for bibrecord in self.sources.records:
-                source = bibtex2source(bibrecord, CrossgramDataSource)
-                old_id = bibrecord.id
-                new_id = '{}-{}'.format(contrib.id, old_id)
-                source.id = new_id
-                source.contribution = contrib
-                biblio_map[old_id] = source
 
         cparam_ids = {
             row['Parameter_ID']

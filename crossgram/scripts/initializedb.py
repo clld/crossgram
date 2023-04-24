@@ -67,6 +67,41 @@ def download_data(sid, contrib_md, cache_dir):
         return cache_dir / sid
 
 
+def collect_language_sources():
+    existing_sources = set(DBSession.execute(
+        sqlalchemy.select(
+            models.LanguageReference.language_pk,
+            models.LanguageReference.source_pk)
+        .distinct()))
+
+    language_sources = set(DBSession.execute(
+        sqlalchemy.select(
+            common.ValueSet.language_pk,
+            common.ValueSetReference.source_pk)
+        .join(common.ValueSetReference.valueset)
+        .distinct()))
+    language_sources.update(DBSession.execute(
+        sqlalchemy.select(
+            common.Unit.language_pk,
+            models.UnitValueReference.source_pk)
+        .join(models.UnitValueReference.unitvalue)
+        .join(common.UnitValue.unit)
+        .distinct()))
+    language_sources.update(DBSession.execute(
+        sqlalchemy.select(
+            common.Unit.language_pk,
+            models.UnitReference.source_pk)
+        .join(models.UnitReference.unit)
+        .distinct()))
+    language_sources = sorted(language_sources - existing_sources)
+
+    DBSession.add_all(
+        models.LanguageReference(
+            language_pk=language_pk,
+            source_pk=source_pk)
+        for language_pk, source_pk in language_sources)
+
+
 def main(args):
     internal = input('[i]nternal or [e]xternal data (default: e): ').strip().lower() == 'i'
     which_submission = input("submission id or 'all' for all submissions (default: all): ").strip().lower() or 'all'
@@ -168,6 +203,11 @@ def main(args):
         glottolog_repos=glottolog_path)
     print('... done')
 
+    print('Collecting language sources...')
+    collect_language_sources()
+    DBSession.flush()
+    print('... done')
+
 
 def prime_cache(args):
     """If data needs to be denormalized for lookup, do that here.
@@ -264,38 +304,6 @@ def prime_cache(args):
         icons = cycle(all_icons)
         for code in param_codes:
             code.update_jsondata(icon=next(icons))
-
-    DBSession.flush()
-    print('... done')
-
-    print('Collecting language sources...')
-
-    language_sources = set(DBSession.execute(
-        sqlalchemy.select(
-            common.ValueSet.language_pk,
-            common.ValueSetReference.source_pk)
-        .join(common.ValueSetReference.valueset)
-        .distinct()))
-    language_sources.update(DBSession.execute(
-        sqlalchemy.select(
-            common.Unit.language_pk,
-            models.UnitValueReference.source_pk)
-        .join(models.UnitValueReference.unitvalue)
-        .join(common.UnitValue.unit)
-        .distinct()))
-    language_sources.update(DBSession.execute(
-        sqlalchemy.select(
-            common.Unit.language_pk,
-            models.UnitReference.source_pk)
-        .join(models.UnitReference.unit)
-        .distinct()))
-    language_sources = sorted(language_sources)
-
-    # delete old associations for idempotency's sake
-    DBSession.execute(sqlalchemy.delete(models.LanguageReference))
-    DBSession.add_all(
-        models.LanguageReference(language_pk=language_pk, source_pk=source_pk)
-        for language_pk, source_pk in language_sources)
 
     DBSession.flush()
     print('... done')
