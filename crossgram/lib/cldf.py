@@ -31,7 +31,9 @@ from crossgram.models import (
     ContributionLanguage,
     Example,
     LParameter,
+    LCode,
     CParameter,
+    CCode,
     UnitReference,
     UnitSentence,
     UnitValueReference,
@@ -263,7 +265,7 @@ class CLDFBenchSubmission:
             if param_id in cparam_ids:
                 param = data['CParameter'].get(param_id)
                 data.add(
-                    UnitDomainElement,
+                    CCode,
                     old_id,
                     parameter=param,
                     id=new_id,
@@ -271,7 +273,7 @@ class CLDFBenchSubmission:
             else:
                 param = data['LParameter'].get(param_id)
                 data.add(
-                    DomainElement,
+                    LCode,
                     old_id,
                     parameter=param,
                     id=new_id,
@@ -342,7 +344,7 @@ class CLDFBenchSubmission:
             lang_new_id = language_id_map.get(value_row['Language_ID'])
             lang = data['Variety'].get(lang_new_id)
             param = data['LParameter'].get(value_row['Parameter_ID'])
-            code = data['DomainElement'].get(value_row['Code_ID'])
+            code = data['LCode'].get(value_row['Code_ID'])
             value_name = code.name if code and code.name else value_row['Value']
             if not old_id or not lang or not param or not value_name:
                 continue
@@ -393,7 +395,7 @@ class CLDFBenchSubmission:
             old_id = cvalue_row.get('ID')
             constr = data['Construction'].get(cvalue_row['Construction_ID'])
             param = data['CParameter'].get(cvalue_row['Parameter_ID'])
-            code = data['UnitDomainElement'].get(cvalue_row['Code_ID'])
+            code = data['CCode'].get(cvalue_row['Code_ID'])
             value_name = code.name if code else cvalue_row['Value']
             if not old_id or not constr or not param or not value_name:
                 continue

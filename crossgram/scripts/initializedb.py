@@ -270,6 +270,8 @@ def prime_cache(args):
     print('... done')
 
     print('Counting things...')
+
+    # language representation for l-parameters
     DBSession.execute(sqlalchemy.text("""
         UPDATE lparameter
         SET language_count = s.c
@@ -280,6 +282,22 @@ def prime_cache(args):
         ) AS s
         WHERE lparameter.pk = s.parameter_pk
     """))
+
+    # language representation for l-parameter codes
+    DBSession.execute(sqlalchemy.text("""
+        UPDATE lcode
+        SET language_count = s.c
+        FROM (
+            SELECT domainelement_pk, count(distinct(language_pk)) AS c
+            FROM value
+            JOIN valueset ON valueset.pk = valueset_pk
+            WHERE domainelement_pk IS NOT NULL
+            GROUP BY domainelement_pk
+        ) AS s
+        WHERE lcode.pk = s.domainelement_pk
+    """))
+
+    # language representation for c-parameters
     DBSession.execute(sqlalchemy.text("""
         UPDATE cparameter
         SET language_count = s.c
@@ -290,6 +308,20 @@ def prime_cache(args):
             GROUP BY unitparameter_pk
         ) AS s
         WHERE cparameter.pk = s.unitparameter_pk
+    """))
+
+    # language representation for c-parameter codes
+    DBSession.execute(sqlalchemy.text("""
+        UPDATE ccode
+        SET language_count = s.c
+        FROM (
+            SELECT unitdomainelement_pk, count(distinct(language_pk)) AS c
+            FROM unitvalue
+            JOIN unit ON unit.pk = unitvalue.unit_pk
+            WHERE unitdomainelement_pk IS NOT NULL
+            GROUP BY unitdomainelement_pk
+        ) AS s
+        WHERE ccode.pk = s.unitdomainelement_pk
     """))
 
     DBSession.flush()

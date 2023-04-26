@@ -21,10 +21,12 @@ from clld.db.models.common import (
     Contribution,
     Language,
     Parameter,
+    DomainElement,
     Sentence,
     Source,
     Unit,
     UnitParameter,
+    UnitDomainElement,
     UnitValue,
 )
 from clld.db.models.source import HasSourceNotNullMixin
@@ -94,11 +96,23 @@ class CParameter(CustomModelMixin, UnitParameter):
     language_count = Column(Integer)
 
 
+@implementer(interfaces.IUnitDomainElement)
+class CCode(CustomModelMixin, UnitDomainElement):
+    pk = Column(Integer, ForeignKey('unitdomainelement.pk'), primary_key=True)
+    language_count = Column(Integer)
+
+
 @implementer(interfaces.IParameter)
 class LParameter(CustomModelMixin, Parameter):
     pk = Column(Integer, ForeignKey('parameter.pk'), primary_key=True)
     contribution_pk = Column(Integer, ForeignKey('contribution.pk'))
     contribution = relationship(CrossgramData, backref='lparameters')
+    language_count = Column(Integer)
+
+
+@implementer(interfaces.IDomainElement)
+class LCode(CustomModelMixin, DomainElement):
+    pk = Column(Integer, ForeignKey('domainelement.pk'), primary_key=True)
     language_count = Column(Integer)
 
 

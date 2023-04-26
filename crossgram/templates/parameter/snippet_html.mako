@@ -8,24 +8,24 @@
 % endif
 
 % if ctx.domain:
-Possible values:
 <% total = 0 %>
 <table class="table table-hover table-condensed domain" style="width: auto;">
     <thead>
         <tr>
-            <th>Value</th><th>Representation</th>
+            <th>&nbsp;</th><th>Value</th><th>Representation</th>
         </tr>
     </thead>
     <tbody>
         % for de in ctx.domain:
         <tr>
             <% total += (de.language_count or 0) %>
+            <td>${h.map_marker_img(request, de)}</td>
             <td>${de.description or de.name}</td>
             <td class="right">${de.language_count or 0}</td>
         </tr>
         % endfor
         <tr>
-            <td class="right"><b>Total:</b></td><td class="right">${total}</td>
+            <td colspan="2" class="right"><b>Total:</b></td><td class="right">${total}</td>
         </tr>
     </tbody>
 </table>

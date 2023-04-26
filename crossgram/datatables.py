@@ -278,7 +278,6 @@ class CParameters(datatables.Unitparameters):
     __constraints__ = [models.CrossgramData]
 
     def base_query(self, query):
-        query = query.join(models.CParameter)
         if self.crossgramdata:
             query = query.filter(
                 models.CParameter.contribution_pk == self.crossgramdata.pk)
