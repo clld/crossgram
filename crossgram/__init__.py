@@ -35,6 +35,8 @@ class LanguageByFamilyMapMarker(util.LanguageByFamilyMapMarker):
             return icons[0] if len(icons) > 0 else None
         elif interfaces.IValue.providedBy(ctx) and ctx.domainelement:
             return ctx.domainelement.jsondata['icon']
+        elif interfaces.IDomainElement.providedBy(ctx):
+            return ctx.jsondata['icon']
         else:
             return super().get_icon(ctx, req)
 
