@@ -324,6 +324,18 @@ def prime_cache(args):
         WHERE ccode.pk = s.unitdomainelement_pk
     """))
 
+    # examples per language
+    DBSession.execute(sqlalchemy.text("""
+        UPDATE variety
+        SET example_count = s.c
+        FROM (
+            SELECT language_pk, count(sentence.pk) AS c
+            FROM sentence
+            GROUP BY language_pk
+        ) AS s
+        WHERE variety.pk = s.language_pk
+    """))
+
     DBSession.flush()
     print('... done')
 

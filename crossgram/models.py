@@ -39,6 +39,7 @@ from clld_glottologfamily_plugin.models import HasFamilyMixin
 class Variety(CustomModelMixin, Language, HasFamilyMixin):
     pk = Column(Integer, ForeignKey('language.pk'), primary_key=True)
     glottolog_id = Column(Unicode)
+    example_count = Column(Integer)
 
 
 @implementer(interfaces.IContribution)

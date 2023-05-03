@@ -223,12 +223,19 @@ class Languages(datatables.Languages):
         source = FilteredLanguageSourcesCol(
             self, 'source', contribution=self.crossgramdata)
         family = FamilyCol(self, 'family', models.Variety)
+        example_count = CountCol(
+            self,
+            'example_count',
+            model_col=models.Variety.example_count,
+            sTitle='Examples')
         linktomap = LinkToMapCol(self, 'm')
         if self.crossgramdata:
-            return [name, glottocode, family, source, linktomap]
+            return [name, glottocode, family, source, example_count]
         else:
             contrib = ContributionsCol(self, 'contributions')
-            return [name, glottocode, family, contrib, source, linktomap]
+            return [
+                name, glottocode, family, contrib, source, example_count,
+                linktomap]
 
 
 class Constructions(datatables.Units):
