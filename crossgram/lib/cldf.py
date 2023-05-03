@@ -362,6 +362,7 @@ class CLDFBenchSubmission:
                 lvalue = data.add(
                     Value, (valueset.pk, value_name),
                     id=new_id, name=value_name, valueset=valueset,
+                    description=value_row.get('Comment'),
                     domainelement=code)
 
             for source_string in sorted(set(value_row.get('Source') or ())):
