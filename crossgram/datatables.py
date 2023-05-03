@@ -309,7 +309,7 @@ class CParameters(datatables.Unitparameters):
                 'contribution',
                 model_col=models.CrossgramData.name,
                 get_obj=lambda i: i.contribution)
-            return [details, name, desc, langcount, contrib]
+            return [details, contrib, name, desc, langcount]
 
 
 class CValues(datatables.Unitvalues):
@@ -381,13 +381,13 @@ class CValues(datatables.Unitvalues):
         # XXX: can `unitparameter` and `language` be set at the same time?
         # ^ that might actually make sense
         if self.unitparameter:
-            return [lang, constr, cvalue, comment, source, contrib]
+            return [contrib, lang, constr, cvalue, comment, source]
         elif self.unit:
             return [cparam, cvalue, comment, source]
         elif self.language:
-            return [constr, cparam, cvalue, comment, source, contrib]
+            return [contrib, constr, cparam, cvalue, comment, source]
         else:
-            return [lang, constr, cparam, cvalue, comment, source, contrib]
+            return [contrib, lang, constr, cparam, cvalue, comment, source]
 
 
 class LParameters(datatables.Parameters):
@@ -419,7 +419,7 @@ class LParameters(datatables.Parameters):
                 'contribution',
                 model_col=models.CrossgramData.name,
                 get_obj=lambda i: i.contribution)
-            return [details, name, desc, langcount, contrib]
+            return [details, contrib, name, desc, langcount]
 
 
 class LValues(datatables.Values):
@@ -489,12 +489,12 @@ class LValues(datatables.Values):
             # XXX add contribution col?
             return [lang, value, comment, sources, link_to_map]
         elif self.language:
-            return [param, value, comment, sources, contrib]
+            return [contrib, param, value, comment, sources]
         else:
             # XXX why valueset?
             valueset = ValueSetCol(
                 self, 'valueset', bSearchable=False, bSortable=False)
-            return [lang, param, valueset, comment, sources, contrib]
+            return [contrib, lang, param, valueset, comment, sources]
 
 
 class Examples(datatables.Sentences):
