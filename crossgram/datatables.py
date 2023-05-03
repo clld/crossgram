@@ -469,7 +469,7 @@ class LValues(datatables.Values):
             model_col=common.Contribution.name,
             get_object=lambda i: i.valueset.contribution)
         sources = RefsCol(self, 'source', get_object=lambda i: i.valueset)
-        details = DetailsRowLinkCol(self, 'd')
+        # details = DetailsRowLinkCol(self, 'd')
 
         # XXX: is `contribution` *ever* set in crossgram?
         # XXX: can `parameter` and `language` be set at the same time?
@@ -478,14 +478,14 @@ class LValues(datatables.Values):
             link_to_map = LinkToMapCol(
                 self, 'm', get_object=lambda i: i.valueset.language)
             # XXX add contribution col?
-            return [lang, value, sources, details, link_to_map]
+            return [lang, value, sources, link_to_map]
         elif self.language:
-            return [param, value, sources, contrib, details]
+            return [param, value, sources, contrib]
         else:
             # XXX why valueset?
             valueset = ValueSetCol(
                 self, 'valueset', bSearchable=False, bSortable=False)
-            return [lang, param, valueset, sources, contrib, details]
+            return [lang, param, valueset, sources, contrib]
 
 
 class Examples(datatables.Sentences):
