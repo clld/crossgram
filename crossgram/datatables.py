@@ -361,6 +361,7 @@ class CValues(datatables.Unitvalues):
             model_col=models.CParameter.name,
             get_obj=lambda i: i.unitparameter,
             sTitle='Construction Parameter')
+        comment = Col(self, 'description', sTitle='Comment')
         source = RefsCol(self, 'source')
         contrib = LinkCol(
             self,
@@ -373,13 +374,13 @@ class CValues(datatables.Unitvalues):
         # XXX: can `unitparameter` and `language` be set at the same time?
         # ^ that might actually make sense
         if self.unitparameter:
-            return [lang, constr, cvalue, source, contrib]
+            return [lang, constr, cvalue, comment, source, contrib]
         elif self.unit:
-            return [cparam, cvalue, source]
+            return [cparam, cvalue, comment, source]
         elif self.language:
-            return [constr, cparam, cvalue, source, contrib]
+            return [constr, cparam, cvalue, comment, source, contrib]
         else:
-            return [lang, constr, cparam, cvalue, source, contrib]
+            return [lang, constr, cparam, cvalue, comment, source, contrib]
 
 
 class LParameters(datatables.Parameters):

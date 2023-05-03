@@ -405,6 +405,7 @@ class CLDFBenchSubmission:
             cvalue = data.add(
                 UnitValue, old_id,
                 id=new_id, name=value_name, contribution=contrib, unit=constr,
+                description=cvalue_row.get('Comment'),
                 unitparameter=param, unitdomainelement=code)
 
             DBSession.flush()
