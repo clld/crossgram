@@ -138,7 +138,6 @@ def main(args):
     else:
         submissions_path = internal_repo / 'submissions'
 
-    language_id_map = {}
     for contrib_dir in submissions_path.iterdir():
         if not contrib_dir.is_dir():
             continue
@@ -186,7 +185,7 @@ def main(args):
             git_repo=git_https,
             description=intro or submission.readme)
 
-        submission.add_to_database(data, language_id_map, contrib)
+        submission.add_to_database(data, contrib)
         print('... done')
 
     DBSession.flush()

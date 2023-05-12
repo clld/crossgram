@@ -1,4 +1,4 @@
-from collections import namedtuple, OrderedDict
+from collections import defaultdict, namedtuple, OrderedDict
 from itertools import chain
 import re
 
@@ -120,7 +120,7 @@ class CLDFBenchSubmission:
         self.sources = sources
         self.readme = readme
 
-    def add_to_database(self, data, language_id_map, contrib):
+    def add_to_database(self, data, contrib):
         used_languages = {
             row['Language_ID']
             for row in chain(
@@ -139,35 +139,62 @@ class CLDFBenchSubmission:
                 source.contribution = contrib
                 biblio_map[old_id] = source
 
-        local_lang_ids = set()
-        for language_row in self.cldf['LanguageTable']:
-            old_id = language_row.get('ID')
-            if not old_id or old_id not in used_languages:
-                continue
+        language_rows = [
+            lang
+            for lang in self.cldf['LanguageTable']
+            if lang.get('ID') and lang['ID'] in used_languages]
 
-            # Apparently some datasets contain multiple languages sharing the
-            # same Glottocode...  So try and use the name to distinguish them
-            id_candidate = language_row.get('Glottocode') or old_id
-            number = 1
-            new_id = id_candidate
-            lang = data['Variety'].get(new_id)
-            while (
-                lang
-                and new_id in local_lang_ids
-                and slug(lang.name) != slug(language_row.get('Name'))
-            ):
-                number += 1
-                new_id = '{}-{}'.format(id_candidate, number)
-                lang = data['Variety'].get(new_id)
-            local_lang_ids.add(new_id)
+        contrib_langs = defaultdict(dict)
+        for language_row in language_rows:
+            if language_row.get('Glottocode'):
+                glottocode = language_row['Glottocode']
+                lang_name = slug(language_row['Name'])
+                contrib_langs[glottocode][lang_name] = language_row['ID']
 
-            language_id_map[old_id] = new_id
-            if not lang:
+        other_langs = defaultdict(dict)
+        for glottocode in contrib_langs:
+            num = 1
+            id_ = glottocode
+            while id_ in data['Variety']:
+                lang = data['Variety'][id_]
+                other_langs[id_][slug(lang.name)] = lang
+                num += 1
+                id_ = '{}-{}'.format(glottocode, num)
+
+        # try and deduplicate the languages based on their glottocode (and maybe
+        # name)
+        duplicates = {}
+        for glottocode, by_name in contrib_langs.items():
+            for name, old_id in by_name.items():
+                if other_langs.get(glottocode):
+                    if len(other_langs[glottocode]) == 1:
+                        # this is the one!
+                        candidates = other_langs.pop(glottocode)
+                        duplicates[old_id] = list(candidates.values())[0]
+                    elif name in other_langs[glottocode]:
+                        # try and choose the language with the same name
+                        duplicates[old_id] = other_langs[glottocode].pop(name)
+
+        language_id_map = {}
+        for language_row in language_rows:
+            old_id = language_row['ID']
+
+            if old_id in duplicates:
+                lang = duplicates[old_id]
+            else:
+                id_candidate = language_row.get('Glottocode') or old_id
+                number = 1
+                new_id = id_candidate
+                while new_id in data['Variety']:
+                    number += 1
+                    new_id = '{}-{}'.format(id_candidate, number)
                 lang = data.add(
                     Variety,
                     new_id,
                     id=new_id,
                     **map_cols(LANG_MAP, language_row))
+
+            language_id_map[old_id] = lang.id
 
             DBSession.flush()
             # TODO add glottocode, iso code, and wals code if available
@@ -184,7 +211,8 @@ class CLDFBenchSubmission:
             DBSession.add(
                 ContributionLanguage(
                     language_pk=lang.pk,
-                    contribution_pk=contrib.pk))
+                    contribution_pk=contrib.pk,
+                    custom_language_name=language_row.get('Name')))
 
         DBSession.flush()
 

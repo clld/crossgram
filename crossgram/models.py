@@ -76,8 +76,11 @@ class CrossgramData(CustomModelMixin, Contribution):
 
 class ContributionLanguage(Base):
 
+    __table_args__ = (UniqueConstraint('language_pk', 'contribution_pk'),)
+
     contribution_pk = Column(Integer, ForeignKey('contribution.pk'))
     language_pk = Column(Integer, ForeignKey('language.pk'))
+    custom_language_name = Column(Unicode)
     contribution = relationship(Contribution, backref='language_assocs')
     language = relationship(Language, backref='contribution_assocs')
 
