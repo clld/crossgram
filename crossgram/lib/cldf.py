@@ -151,29 +151,29 @@ class CLDFBenchSubmission:
                 lang_name = slug(language_row['Name'])
                 contrib_langs[glottocode][lang_name] = language_row['ID']
 
-        other_langs = defaultdict(dict)
-        for glottocode in contrib_langs:
-            num = 1
-            id_ = glottocode
-            while id_ in data['Variety']:
-                lang = data['Variety'][id_]
-                other_langs[id_][slug(lang.name)] = lang
-                num += 1
-                id_ = '{}-{}'.format(glottocode, num)
-
         # try and deduplicate the languages based on their glottocode (and maybe
         # name)
         duplicates = {}
         for glottocode, by_name in contrib_langs.items():
+            existing_langs = {}
+            num = 1
+            id_ = glottocode
+            while id_ in data['Variety']:
+                lang = data['Variety'][id_]
+                existing_langs[slug(lang.name)] = lang
+                num += 1
+                id_ = '{}-{}'.format(glottocode, num)
+
             for name, old_id in by_name.items():
-                if other_langs.get(glottocode):
-                    if len(other_langs[glottocode]) == 1:
-                        # this is the one!
-                        candidates = other_langs.pop(glottocode)
-                        duplicates[old_id] = list(candidates.values())[0]
-                    elif name in other_langs[glottocode]:
-                        # try and choose the language with the same name
-                        duplicates[old_id] = other_langs[glottocode].pop(name)
+                if not existing_langs:
+                    break
+                elif len(existing_langs) == 1:
+                    # this is the one!
+                    duplicates[old_id] = list(existing_langs.values())[0]
+                    break
+                elif name in existing_langs:
+                    # try and choose the language with the same name
+                    duplicates[old_id] = existing_langs.pop(name)
 
         language_id_map = {}
         for language_row in language_rows:
