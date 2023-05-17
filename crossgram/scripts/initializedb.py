@@ -180,7 +180,7 @@ def main(args):
             id=sid,
             number=int(contrib_md['number']),
             published=published,
-            name=submission.title,
+            name=contrib_md.get('title') or submission.title,
             doi=contrib_md.get('doi'),
             git_repo=git_https,
             description=intro or submission.readme)
