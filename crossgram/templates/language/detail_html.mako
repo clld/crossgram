@@ -22,11 +22,20 @@
 % endfor
 </ul>
 
-<h3>${_('Parameter')} Values</h3>
 % endif
 
+% if ctx.valuesets:
+<h3>${_('Parameter')} Values</h3>
+
 ${request.get_datatable('values', h.models.Value, language=ctx).render()}
+% endif
 
 <%def name="sidebar()">
     ${util.language_meta()}
 </%def>
+
+% if ctx.example_count:
+<h3 id="examples">${_('Sentences')}</h3>
+
+${request.get_datatable('sentences', h.models.Sentence, language=ctx).render()}
+% endif
