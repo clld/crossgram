@@ -7,35 +7,72 @@
 
 <h2>${_('Language')}: ${ctx.name}</h2>
 
-<%
-    construction_list = list(
-        DBSession.query(m.Construction)
-            .join(h.models.Contribution)
-            .filter(m.Construction.language == ctx))
-%>
-% if construction_list:
-<h3>Constructions</h3>
+<div class="tabbable">
 
-<ul>
-% for constr in construction_list:
-  <li>${h.link(request, constr)} (from ${h.link(request, constr.contribution)})</li>
-% endfor
-</ul>
+  ## apparently units don't have backlinks to languages
+  <%
+    construction_count = (
+        DBSession.query(h.models.Unit)
+            .filter(m.Unit.language_pk == ctx.pk)
+            .count())
+  %>
+  <ul class="nav nav-tabs">
+    <li class="active"><a href="#about" data-toggle="tab">Introduction</a></li>
+    % if ctx.valuesets:
+      <li><a href="#lparams" data-toggle="tab">${_('Parameters')}</a></li>
+    % endif
+    % if construction_count:
+      <li><a href="#constr" data-toggle="tab">${_('Units')}</a></li>
+    % endif
+    % if ctx.example_count:
+      <li><a href="#examples" data-toggle="tab">${_('Sentences')}</a></li>
+    % endif
+    ## % if ctx.sources:
+    ##   <li><a href="#sources" data-toggle="tab">${_('Sources')}</a></li>
+    ## % endif
+  </ul>
 
-% endif
+  <div class="tab-content">
 
-% if ctx.valuesets:
-<h3>${_('Parameter')} Values</h3>
+    <div id="about" class="tab-pane active">
+      <div class="span8">
+        ## TODO: very empty!
+        ${ctx.description or ''|n}
+      </div>
+      <div class="span4">
+        ${util.language_meta()}
+      </div>
+    </div>
 
-${request.get_datatable('values', h.models.Value, language=ctx).render()}
-% endif
+    % if ctx.valuesets:
+    <div id="lparams" class="tab-pane">
+      ${request.get_datatable('values', h.models.Value, language=ctx).render()}
+    </div>
+    % endif
 
-<%def name="sidebar()">
-    ${util.language_meta()}
-</%def>
+    % if construction_count:
+    <div id="constr" class="tab-pane">
+      ${request.get_datatable('units', m.Construction, language=ctx).render()}
+    </div>
+    % endif
 
-% if ctx.example_count:
-<h3 id="examples">${_('Sentences')}</h3>
+    % if ctx.example_count:
+    <div id="examples" class="tab-pane">
+      ${request.get_datatable('sentences', h.models.Sentence, language=ctx).render()}
+    </div>
+    % endif
 
-${request.get_datatable('sentences', h.models.Sentence, language=ctx).render()}
-% endif
+  </div>
+
+  <script>
+$(document).ready(function() {
+    if (location.hash !== '') {
+        $('a[href="#' + location.hash.substr(2) + '"]').tab('show');
+    }
+    return $('a[data-toggle="tab"]').on('shown', function(e) {
+        return location.hash = 't' + $(e.target).attr('href').substr(1);
+    });
+});
+    </script>
+
+</div>
