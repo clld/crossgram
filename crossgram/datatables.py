@@ -67,6 +67,20 @@ class CountCol(Col):
             else_=self.model_col)
 
 
+class ExampleCountCol(CountCol):
+    def format(self, item):
+        item = self.get_obj(item)
+        count = self.get_value(item)
+        if count == 0:
+            return count
+        else:
+            return link(
+                self.dt.req,
+                item,
+                label=count,
+                url_kw={'_anchor': 'texamples'})
+
+
 class MoreIntuitiveValueNameCol(ValueNameCol):
     """More intuitive value name column (at least for me).
 
@@ -222,7 +236,7 @@ class Languages(datatables.Languages):
         source = FilteredLanguageSourcesCol(
             self, 'source', contribution=self.crossgramdata)
         family = FamilyCol(self, 'family', models.Variety)
-        example_count = CountCol(
+        example_count = ExampleCountCol(
             self,
             'example_count',
             model_col=models.Variety.example_count,
