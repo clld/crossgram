@@ -55,8 +55,7 @@ class GlottocodeCol(Col):
 class CountCol(Col):
     __kw__ = {
         'input_size': 'mini',
-        'sClass': 'right',
-        'bSearchable': False}
+        'sClass': 'right'}
 
     def get_value(self, item):
         return super().get_value(item) or 0
