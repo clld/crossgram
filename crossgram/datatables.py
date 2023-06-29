@@ -1,3 +1,4 @@
+from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.expression import case
 
@@ -278,12 +279,17 @@ class Constructions(datatables.Units):
             get_obj=lambda i: i.language)
         name = LinkCol(self, 'name', sTitle='Construction')
         desc = Col(self, 'description')
+        contrib_query = select(models.CrossgramData.name)\
+            .join_from(models.Construction, models.CrossgramData)\
+            .order_by(models.CrossgramData.name)\
+            .distinct()
+        contribs_with_constr = [c for c, in DBSession.execute(contrib_query)]
         contrib = LinkCol(
             self,
             'contribution',
             model_col=models.CrossgramData.name,
             get_obj=lambda i: i.contribution,
-            choices=get_distinct_values(models.CrossgramData.name))
+            choices=contribs_with_constr)
 
         if self.crossgramdata:
             return [language, name, desc]
