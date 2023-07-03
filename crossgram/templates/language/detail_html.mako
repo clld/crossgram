@@ -1,5 +1,4 @@
 <%inherit file="../${context.get('request').registry.settings.get('clld.app_template', 'app.mako')}"/>
-<% from clld.db.meta import DBSession %>
 <% import crossgram.models as m %>
 <%namespace name="util" file="../util.mako"/>
 <%! active_menu_item = "languages" %>
@@ -12,7 +11,7 @@
   ## apparently units don't have backlinks to languages
   <%
     construction_count = (
-        DBSession.query(h.models.Unit)
+        request.db.query(h.models.Unit)
             .filter(m.Unit.language_pk == ctx.pk)
             .count())
   %>
@@ -38,6 +37,22 @@
       <div class="span8">
         ## TODO: very empty!
         ${ctx.description or ''|n}
+        % if ctx.custom_names:
+        <h3>Alternative names used by contributions</h3>
+        <ul>
+          <%
+            name_query = request.db\
+              .query(m.ContributionLanguage)\
+              .join(m.CrossgramData)\
+              .filter(m.ContributionLanguage.language_pk == ctx.pk)\
+              .filter(m.ContributionLanguage.custom_language_name != ctx.name)\
+              .order_by(m.ContributionLanguage.custom_language_name)
+          %>
+          % for contrib_lang in name_query:
+          <li>${contrib_lang.custom_language_name}: ${h.link(request, contrib_lang.contribution)}</li>
+          % endfor
+        </ul>
+        % endif
       </div>
       <div class="span4">
         ${util.language_meta()}

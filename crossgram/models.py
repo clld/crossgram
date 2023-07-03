@@ -40,6 +40,7 @@ class Variety(CustomModelMixin, Language, HasFamilyMixin):
     pk = Column(Integer, ForeignKey('language.pk'), primary_key=True)
     glottolog_id = Column(Unicode)
     example_count = Column(Integer)
+    custom_names = Column(Unicode)
 
 
 @implementer(interfaces.IContribution)

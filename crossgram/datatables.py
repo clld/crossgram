@@ -1,4 +1,6 @@
-from sqlalchemy import select
+import re
+
+from sqlalchemy import func, select
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.expression import case
 
@@ -38,6 +40,42 @@ class DateCol(Col):
 
     def format(self, item):
         return item.published.year
+
+
+class CustomLangNameCol(Col):
+
+    def __init__(self, dt, name, contribution_pk, *args, **kwargs):
+        self._contrib_pk = contribution_pk
+        self._name_regex = re.compile('█{}▒([^█]*)█'.format(self._contrib_pk))
+        self._contrib_pattern = '%█{}▒%'.format(self._contrib_pk)
+        super().__init__(dt, name, *args, **kwargs)
+
+    def order(self):
+        return case(
+            (models.Variety.custom_names.like(self._contrib_pattern),
+             func.substring(models.Variety.custom_names,
+                            r'█{}▒([^█]*)█'.format(self._contrib_pk))),
+            else_=models.Variety.name)
+
+    def search(self, qs):
+        name_pattern = r'.*█{}▒[^█]*{}[^█]*█.*'.format(
+            self._contrib_pk,
+            re.escape(qs))
+        return case(
+            (models.Variety.custom_names.like(self._contrib_pattern),
+             models.Variety.custom_names.op('~*')(name_pattern)),
+            else_=icontains(models.Variety.name, qs))
+
+    def format(self, item):
+        obj = self.get_obj(item)
+        if not obj:
+            return ''
+        match = self._name_regex.search(obj.custom_names or '')
+        if match:
+            label = match.group(1)
+        else:
+            label = obj.name or str(obj)
+        return link(self.dt.req, obj, label=label)
 
 
 class GlottocodeCol(Col):
@@ -226,7 +264,6 @@ class Languages(datatables.Languages):
         return query
 
     def col_defs(self):
-        name = LinkCol(self, 'name')
         # NOTE: can't be named 'glottocode' because Language.glottocode is a
         # Python property instead of a sqlalchemy table column.
         glottocode = GlottocodeCol(
@@ -244,8 +281,13 @@ class Languages(datatables.Languages):
             sTitle='Examples')
         linktomap = LinkToMapCol(self, 'm')
         if self.crossgramdata:
-            return [name, glottocode, family, source, example_count]
+            custom_name = CustomLangNameCol(
+                self, 'custom_name',
+                contribution_pk=self.crossgramdata.pk,
+                sTitle='Name')
+            return [custom_name, glottocode, family, source, example_count]
         else:
+            name = LinkCol(self, 'name')
             contrib = ContributionsCol(self, 'contributions')
             return [
                 name, glottocode, family, contrib, source, example_count,
@@ -274,9 +316,6 @@ class Constructions(datatables.Units):
         return query
 
     def col_defs(self):
-        language = LinkCol(
-            self, 'language', model_col=common.Language.name,
-            get_obj=lambda i: i.language)
         name = LinkCol(self, 'name', sTitle='Construction')
         desc = Col(self, 'description')
         contrib_query = select(models.CrossgramData.name)\
@@ -292,10 +331,17 @@ class Constructions(datatables.Units):
             choices=contribs_with_constr)
 
         if self.crossgramdata:
+            language = CustomLangNameCol(
+                self, 'custom_name', self.crossgramdata.pk,
+                get_obj=lambda i: i.language,
+                sTitle='Language')
             return [language, name, desc]
         elif self.language:
             return [name, desc, contrib]
         else:
+            language = LinkCol(
+                self, 'language', model_col=common.Language.name,
+                get_obj=lambda i: i.language)
             return [language, name, desc, contrib]
 
 
@@ -378,10 +424,6 @@ class CValues(datatables.Unitvalues):
         constr = LinkCol(
             self, 'unit',
             get_obj=lambda i: i.unit, model_col=common.Unit.name)
-        lang = LinkCol(
-            self, 'language',
-            get_obj=lambda i: i.unit.language,
-            model_col=common.Language.name)
         cparam = LinkCol(
             self, 'unitparameter',
             model_col=models.CParameter.name,
@@ -400,12 +442,20 @@ class CValues(datatables.Unitvalues):
         # XXX: can `unitparameter` and `language` be set at the same time?
         # ^ that might actually make sense
         if self.unitparameter:
+            lang = CustomLangNameCol(
+                self, 'custom_name', self.unitparameter.contribution_pk,
+                get_obj=lambda i: i.unit.language,
+                sTitle='Language')
             return [contrib, lang, constr, cvalue, comment, source]
         elif self.unit:
             return [cparam, cvalue, comment, source]
         elif self.language:
             return [contrib, constr, cparam, cvalue, comment, source]
         else:
+            lang = LinkCol(
+                self, 'language',
+                get_obj=lambda i: i.unit.language,
+                model_col=common.Language.name)
             return [contrib, lang, constr, cparam, cvalue, comment, source]
 
 
@@ -479,11 +529,6 @@ class LValues(datatables.Values):
         if self.parameter and self.parameter.domain:
             value.choices = [de.name for de in self.parameter.domain]
 
-        lang = LinkCol(
-            self,
-            'language',
-            model_col=common.Language.name,
-            get_object=lambda i: i.valueset.language)
         param = LinkCol(
             self,
             'parameter',
@@ -505,11 +550,20 @@ class LValues(datatables.Values):
         if self.parameter:
             link_to_map = LinkToMapCol(
                 self, 'm', get_object=lambda i: i.valueset.language)
+            lang = CustomLangNameCol(
+                self, 'custom_name', self.parameter.contribution_pk,
+                get_obj=lambda i: i.valueset.language,
+                sTitle='Language')
             # XXX add contribution col?
             return [lang, value, comment, sources, link_to_map]
         elif self.language:
             return [contrib, param, value, comment, sources]
         else:
+            lang = LinkCol(
+                self,
+                'language',
+                model_col=common.Language.name,
+                get_object=lambda i: i.valueset.language)
             # XXX why valueset?
             valueset = ValueSetCol(
                 self, 'valueset', bSearchable=False, bSortable=False)
@@ -531,13 +585,6 @@ class Examples(datatables.Sentences):
         return query
 
     def col_defs(self):
-        language = LinkCol(
-            self,
-            'language',
-            model_col=common.Language.name,
-            get_obj=lambda i: i.language,
-            bSortable=not self.language,
-            bSearchable=not self.language)
         primary = LinkCol(
             self, 'name', sTitle='Primary text', sClass="object-language")
         analyzed = TsvCol(self, 'analyzed', sTitle='Analyzed text')
@@ -550,8 +597,19 @@ class Examples(datatables.Sentences):
         details = DetailsRowLinkCol(self, 'd')
 
         if self.crossgramdata:
+            language = CustomLangNameCol(
+                self, 'custom_name', self.crossgramdata.pk,
+                get_obj=lambda i: i.language,
+                sTitle='Language')
             return [language, primary, analyzed, gloss, translation, details]
         else:
+            language = LinkCol(
+                self,
+                'language',
+                model_col=common.Language.name,
+                get_obj=lambda i: i.language,
+                bSortable=not self.language,
+                bSearchable=not self.language)
             contrib = LinkCol(
                 self,
                 'contribution',

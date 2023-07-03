@@ -245,25 +245,49 @@ def prime_cache(args):
     DBSession.add_all(glottocodes.values())
     DBSession.add_all(isocodes.values())
     DBSession.flush()
+    print('...done')
+
+    print('Denormalising per-contribution language names')
+
+    language_names = {}
+    lang_name_query = DBSession.query(models.ContributionLanguage)\
+        .join(models.Language)
+    for contrib_lang in lang_name_query:
+        lang_id = contrib_lang.language.id
+        contrib_pk = contrib_lang.contribution_pk
+        lang_name = contrib_lang.custom_language_name \
+            .replace('▒', '') \
+            .replace('█', '') \
+            .strip()
+        if lang_id not in language_names:
+            language_names[lang_id] = []
+        language_names[lang_id].append((contrib_pk, lang_name))
 
     for lang in DBSession.query(common.Language):
-        if lang.id not in languoids:
-            continue
-        languoid = languoids[lang.id]
-        lang.glottolog_id = languoid.id
-        lang.name = languoid.name
-        lang.latitude = languoid.latitude
-        lang.longitude = languoid.longitude
-        lang.macroarea = languoid.macroareas[0].name if languoid.macroareas else ''
-
-        DBSession.add(common.LanguageIdentifier(
-            language=lang,
-            identifier_pk=glottocodes[languoid.id].pk))
-
-        if languoid.iso in isocodes:
+        if lang.id in languoids:
+            languoid = languoids[lang.id]
+            lang.glottolog_id = languoid.id
+            lang.name = languoid.name
+            lang.latitude = languoid.latitude
+            lang.longitude = languoid.longitude
+            lang.macroarea = languoid.macroareas[0].name if languoid.macroareas else ''
             DBSession.add(common.LanguageIdentifier(
                 language=lang,
-                identifier_pk=isocodes[languoid.iso].pk))
+                identifier_pk=glottocodes[languoid.id].pk))
+
+            if languoid.iso in isocodes:
+                DBSession.add(common.LanguageIdentifier(
+                    language=lang,
+                    identifier_pk=isocodes[languoid.iso].pk))
+
+        custom_names = '█'.join(
+            '{}▒{}'.format(contrib, name)
+            for contrib, name in language_names.get(lang.id, ())
+            if name != lang.name)
+        if custom_names:
+            lang.custom_names = '█{}█'.format(custom_names)
+        else:
+            lang.custom_names = None
 
     DBSession.flush()
     print('... done')
