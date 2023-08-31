@@ -1,6 +1,5 @@
 from __future__ import unicode_literals
 
-from collections import OrderedDict
 from itertools import cycle, groupby
 import pathlib
 import re
@@ -228,26 +227,54 @@ def prime_cache(args):
     glottolog_path = catconf.get_clone('glottolog')
     glottolog = Glottolog(glottolog_path)
 
-    lang_ids = [lang.id for lang in DBSession.query(common.Language)]
-    languoids = {l.id: l for l in glottolog.languoids(lang_ids)}
+    db_languages = {
+        language.id: language
+        for language in DBSession.query(common.Language)}
+    glottolog_languages = {
+        languoid.id: languoid
+        for languoid in glottolog.languoids(db_languages)}
 
-    glottocodes = [
-        (l.id, common.Identifier(id=l.id, name=l.id, type='glottolog'))
-        for l in languoids.values()]
-    glottocodes = OrderedDict(sorted(glottocodes, key=lambda t: t[0]))
+    glottocodes = {
+        languoid.id: common.Identifier(
+            id=languoid.id,
+            name=languoid.id,
+            type='glottolog')
+        for languoid in glottolog_languages.values()}
+    isocodes = {
+        languoid.id: common.Identifier(
+            id=isocode,
+            name=isocode,
+            type='iso639-3')
+        for languoid in glottolog_languages.values()
+        if (isocode := languoid.iso)}
 
-    isocodes = [
-        (l.iso, common.Identifier(id=l.iso, name=l.iso, type='iso639-3'))
-        for l in languoids.values()
-        if l.iso]
-    isocodes = OrderedDict(sorted(isocodes, key=lambda t: t[0]))
+    print('...done')
+    print('Denormalising language info (glottocodes, macroarea, alt names, etc.)')
+
+    for obj in DBSession.query(common.LanguageIdentifier).all():
+        DBSession.delete(obj)
+    for obj in DBSession.query(common.Identifier).all():
+        DBSession.delete(obj)
+
+    DBSession.flush()
 
     DBSession.add_all(glottocodes.values())
     DBSession.add_all(isocodes.values())
-    DBSession.flush()
-    print('...done')
 
-    print('Denormalising per-contribution language names')
+    DBSession.flush()
+
+    DBSession.add_all(
+        common.LanguageIdentifier(
+            language_pk=language.pk,
+            identifier_pk=identifier.pk)
+        for language in db_languages.values()
+        if (identifier := glottocodes.get(language.id)))
+    DBSession.add_all(
+        common.LanguageIdentifier(
+            language_pk=language.pk,
+            identifier_pk=identifier.pk)
+        for language in db_languages.values()
+        if (identifier := isocodes.get(language.id)))
 
     language_names = {}
     lang_name_query = DBSession.query(models.ContributionLanguage)\
@@ -263,31 +290,22 @@ def prime_cache(args):
             language_names[lang_id] = []
         language_names[lang_id].append((contrib_pk, lang_name))
 
-    for lang in DBSession.query(common.Language):
-        if lang.id in languoids:
-            languoid = languoids[lang.id]
-            lang.glottolog_id = languoid.id
-            lang.name = languoid.name
-            lang.latitude = languoid.latitude
-            lang.longitude = languoid.longitude
-            lang.macroarea = languoid.macroareas[0].name if languoid.macroareas else ''
-            DBSession.add(common.LanguageIdentifier(
-                language=lang,
-                identifier_pk=glottocodes[languoid.id].pk))
-
-            if languoid.iso in isocodes:
-                DBSession.add(common.LanguageIdentifier(
-                    language=lang,
-                    identifier_pk=isocodes[languoid.iso].pk))
+    for language in db_languages.values():
+        if (languoid := glottolog_languages.get(language.id)):
+            language.glottolog_id = languoid.id
+            language.name = languoid.name
+            language.latitude = languoid.latitude
+            language.longitude = languoid.longitude
+            language.macroarea = languoid.macroareas[0].name if languoid.macroareas else ''
 
         custom_names = '█'.join(
             '{}▒{}'.format(contrib, name)
-            for contrib, name in language_names.get(lang.id, ())
-            if name != lang.name)
+            for contrib, name in language_names.get(language.id, ())
+            if name != language.name)
         if custom_names:
-            lang.custom_names = '█{}█'.format(custom_names)
+            language.custom_names = '█{}█'.format(custom_names)
         else:
-            lang.custom_names = None
+            language.custom_names = None
 
     DBSession.flush()
     print('... done')
