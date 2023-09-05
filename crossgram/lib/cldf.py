@@ -1,6 +1,7 @@
 from collections import defaultdict, namedtuple, OrderedDict
-from itertools import chain
+from itertools import chain, cycle
 import re
+import sys
 
 from clld.cliutil import bibtex2source
 from clld.lib import bibtex
@@ -284,28 +285,51 @@ class CLDFBenchSubmission:
 
         DBSession.flush()
 
+        cldf_codes = {}
         for code_row in self.cldf.get('CodeTable', ()):
-            old_id = code_row.get('ID')
             param_id = code_row.get('Parameter_ID')
-            if not old_id or not param_id:
+            if not param_id:
                 continue
-            new_id = '{}-{}'.format(contrib.id, old_id)
-            if param_id in cparam_ids:
-                param = data['CParameter'].get(param_id)
-                data.add(
-                    CCode,
-                    old_id,
-                    parameter=param,
-                    id=new_id,
-                    **map_cols(CCODE_MAP, code_row))
-            else:
-                param = data['LParameter'].get(param_id)
-                data.add(
-                    LCode,
-                    old_id,
-                    parameter=param,
-                    id=new_id,
-                    **map_cols(LCODE_MAP, code_row))
+            if param_id not in cldf_codes:
+                cldf_codes[param_id] = []
+            cldf_codes[param_id].append(code_row)
+
+        all_icons = [getattr(i, 'name', i) for i in ORDERED_ICONS]
+        for param_id, code_rows in cldf_codes.items():
+            code_icons = cycle(all_icons)
+            for code_row in code_rows:
+                old_id = code_row.get('ID')
+                param_id = code_row.get('Parameter_ID')
+                if not old_id or not param_id:
+                    continue
+                code_icon = next(code_icons)
+                if (custom_icon := code_row.get('Map_Icon')):
+                    if re.fullmatch(r'[cstfd][0-9a-fA-F]{6}', custom_icon):
+                        code_icon = custom_icon
+                    else:
+                        msg = "{}:Param {}:Code {}: invalid icon '{}'".format(
+                            contrib.id, param_id, old_id, custom_icon)
+                        print(msg, file=sys.stderr)
+
+                new_id = '{}-{}'.format(contrib.id, old_id)
+                if param_id in cparam_ids:
+                    param = data['CParameter'].get(param_id)
+                    data.add(
+                        CCode,
+                        old_id,
+                        parameter=param,
+                        id=new_id,
+                        jsondata={'icon': code_icon},
+                        **map_cols(CCODE_MAP, code_row))
+                else:
+                    param = data['LParameter'].get(param_id)
+                    data.add(
+                        LCode,
+                        old_id,
+                        parameter=param,
+                        id=new_id,
+                        jsondata={'icon': code_icon},
+                        **map_cols(LCODE_MAP, code_row))
 
         for index, example_row in enumerate(self.cldf.get('ExampleTable', ())):
             old_id = example_row.get('ID')
