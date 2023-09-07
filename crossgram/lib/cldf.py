@@ -3,7 +3,7 @@ from itertools import chain, cycle
 import re
 import sys
 
-from clld.cliutil import bibtex2source
+from clld.cliutil import bibtex2source, Data
 from clld.lib import bibtex
 from clld.web.icon import ORDERED_ICONS
 from clldutils import jsonlib
@@ -43,35 +43,12 @@ from crossgram.models import (
 )
 
 
-CONSTR_MAP = {
-    'Name': 'name',
-    'Description': 'description'}
-
-LANG_MAP = {
-    'Name': 'name',
-    'Latitude': 'latitude',
-    'Longitude': 'longitude'}
-
-PARAM_MAP = {
-    'Name': 'name',
-    'Description': 'description'}
-
-LCODE_MAP = {
-    'Name': 'name',
-    'Description': 'description',
-    'Number': 'number'}
-
-CCODE_MAP = {
-    'Name': 'name',
-    'Description': 'description',
-    'Number': 'ord'}
-
-EXAMPLE_MAP = {
-    'Primary_Text': 'name',
-    'Translated_Text': 'description',
-    'Analyzed_Word': 'analyzed',
-    'Gloss': 'gloss',
-    'Comment': 'comment'}
+def parse_author(author_spec):
+    if not isinstance(author_spec, dict):
+        author_spec = {'name': author_spec}
+    parsed_name = HumanName(author_spec.get('name', ''))
+    author_id = slug('{}{}'.format(parsed_name.last, parsed_name.first))
+    return author_id, author_spec, parsed_name
 
 
 SourceTuple = namedtuple(
@@ -79,11 +56,11 @@ SourceTuple = namedtuple(
     ('bibkey', 'pages', 'source_string', 'source_pk'))
 
 
-def parse_source(biblio_map, source_string):
+def parse_source(sources, source_string):
     match = re.fullmatch(r'([^[]+)(?:\[([^]]*)\])?', source_string)
     if match and match.group(1):
         bibkey, pages = match.groups()
-        source = biblio_map.get(bibkey)
+        source = sources.get(bibkey)
         return SourceTuple(
             bibkey=bibkey,
             pages=pages or '',
@@ -93,23 +70,24 @@ def parse_source(biblio_map, source_string):
         return None
 
 
-def map_cols(mapping, col):
-    return {
-        new: col[old]
-        for old, new in mapping.items()
-        if old in col}
+def shorten_url(property_url):
+    _, anchor = property_url.split('#')
+    return anchor
 
 
-def _merge_field(pair):
-    k, v = pair
-    if k in ('Analyzed_Word', 'Gloss', 'Source'):
-        return k, '\t'.join((elem or '') for elem in v)
-    else:
-        return k, v
+def read_table(cldf, table):
+    table = cldf.get(table)
+    if not table:
+        return
 
-
-def _merge_glosses(col):
-    return dict(map(_merge_field, col.items()))
+    column_map = {
+        column.name: shorten_url(column.propertyUrl.uri)
+        for column in table.tableSchema.columns
+        if column.propertyUrl}
+    for row in cldf[table]:
+        yield {
+            column_map.get(colname, colname): cell
+            for colname, cell in row.items()}
 
 
 class CLDFBenchSubmission:
@@ -121,46 +99,66 @@ class CLDFBenchSubmission:
         self.sources = sources
         self.readme = readme
 
-    def add_to_database(self, data, contrib):
+    def add_to_database(self, contribution, all_languages, all_contributors):
+        # read cldf data
+
+        cldf_constructions = list(read_table(self.cldf, 'constructions.csv'))
+        cldf_lvalues = list(read_table(self.cldf, 'ValueTable'))
+        cldf_cvalues = list(read_table(self.cldf, 'cvalues.csv'))
+        cldf_examples = list(read_table(self.cldf, 'ExampleTable'))
+
         used_languages = {
-            row['Language_ID']
-            for row in chain(
-                self.cldf.get('ValueTable') or (),
-                self.cldf.get('ExampleTable') or (),
-                self.cldf.get('constructions.csv') or ())
-            if row.get('Language_ID')}
+            language_id
+            for row in chain(cldf_lvalues, cldf_constructions, cldf_examples)
+            if (language_id := row.get('languageReference'))}
+        cldf_languages = [
+            row
+            for row in read_table(self.cldf, 'LanguageTable')
+            if row['id'] in used_languages]
 
-        biblio_map = {}
-        if self.sources:
-            for bibrecord in self.sources.records:
-                source = bibtex2source(bibrecord, CrossgramDataSource)
-                old_id = bibrecord.id
-                new_id = '{}-{}'.format(contrib.id, old_id)
-                source.id = new_id
-                source.contribution = contrib
-                biblio_map[old_id] = source
+        if self.cldf.get('ParameterTable'):
+            cldf_parameters = {
+                cldf_parameter['id']: cldf_parameter
+                for cldf_parameter in read_table(self.cldf, 'ParameterTable')}
+        else:
+            # Automatically build parameter table from value tables.
+            cldf_parameters = {}
+            for value in chain(cldf_lvalues, cldf_cvalues):
+                parameter_id = value.get('parameterReference')
+                if parameter_id and parameter_id not in cldf_parameters:
+                    cldf_parameters[parameter_id] = {
+                        'id': parameter_id,
+                        'name': parameter_id,
+                    }
 
-        language_rows = [
-            lang
-            for lang in self.cldf['LanguageTable']
-            if lang.get('ID') and lang['ID'] in used_languages]
+        cldf_codes = {}
+        for code_row in read_table(self.cldf, 'CodeTable'):
+            param_id = code_row['parameterReference']
+            if not param_id:
+                continue
+            if param_id not in cldf_codes:
+                cldf_codes[param_id] = []
+            cldf_codes[param_id].append(code_row)
 
-        contrib_langs = defaultdict(dict)
-        for language_row in language_rows:
-            if language_row.get('Glottocode'):
-                glottocode = language_row['Glottocode']
-                lang_name = slug(language_row['Name'])
-                contrib_langs[glottocode][lang_name] = language_row['ID']
+        # Populate database
+
+        contrib_langs = {}
+        for cldf_language in cldf_languages:
+            if (glottocode := cldf_language.get('glottocode')):
+                lang_name = slug(cldf_language['name'])
+                if glottocode not in contrib_langs:
+                    contrib_langs[glottocode] = {}
+                contrib_langs[glottocode][lang_name] = cldf_language['id']
 
         # try and deduplicate the languages based on their glottocode (and maybe
         # name)
-        duplicates = {}
+        languages = {}
         for glottocode, by_name in contrib_langs.items():
             existing_langs = {}
             num = 1
             id_ = glottocode
-            while id_ in data['Variety']:
-                lang = data['Variety'][id_]
+            while id_ in all_languages:
+                lang = all_languages[id_]
                 existing_langs[slug(lang.name)] = lang
                 num += 1
                 id_ = '{}-{}'.format(glottocode, num)
@@ -170,311 +168,327 @@ class CLDFBenchSubmission:
                     break
                 elif len(existing_langs) == 1:
                     # this is the one!
-                    duplicates[old_id] = list(existing_langs.values())[0]
+                    languages[old_id] = list(existing_langs.values())[0]
                     break
                 elif name in existing_langs:
                     # try and choose the language with the same name
-                    duplicates[old_id] = existing_langs.pop(name)
+                    languages[old_id] = existing_langs.pop(name)
 
-        language_id_map = {}
-        for language_row in language_rows:
-            old_id = language_row['ID']
+        # FIXME: this is ugly
+        new_ids = set()
 
-            if old_id in duplicates:
-                lang = duplicates[old_id]
-            else:
-                id_candidate = language_row.get('Glottocode') or old_id
-                number = 1
-                new_id = id_candidate
-                while new_id in data['Variety']:
-                    number += 1
-                    new_id = '{}-{}'.format(id_candidate, number)
-                lang = data.add(
-                    Variety,
-                    new_id,
-                    id=new_id,
-                    **map_cols(LANG_MAP, language_row))
+        def _new_language_id(cldf_language):
+            id_candidate = cldf_language['glottocode'] or cldf_language['id']
+            number = 1
+            new_id = id_candidate
+            while new_id in all_languages or new_id in new_ids:
+                number += 1
+                new_id = '{}-{}'.format(id_candidate, number)
+            new_ids.add(new_id)
+            return new_id
 
-            language_id_map[old_id] = lang.id
+        # TODO add glottocode, iso code, and wals code if available
+        new_langs_with_ids = [
+            (cldf_language['id'], Variety(
+                id=_new_language_id(cldf_language),
+                name=cldf_language['name'],
+                latitude=cldf_language['latitude'],
+                longitude=cldf_language['longitude']))
+            for cldf_language in cldf_languages
+            if cldf_language['id'] not in languages]
+        new_languages = [language for _, language in new_langs_with_ids]
+        DBSession.add_all(new_languages)
+        languages.update(new_langs_with_ids)
 
-            DBSession.flush()
-            # TODO add glottocode, iso code, and wals code if available
+        lparameter_ids = {
+            parameter_id
+            for value in cldf_lvalues
+            if (parameter_id := value.get('parameterReference'))}
+        cparameter_ids = {
+            parameter_id
+            for value in cldf_cvalues
+            if (parameter_id := value.get('parameterReference'))}
+        lparameters = {
+            cldf_parameter['id']: LParameter(
+                id='{}-{}'.format(contribution.id, cldf_parameter['id']),
+                contribution_pk=contribution.pk,
+                name=cldf_parameter['name'],
+                description=cldf_parameter['description'])
+            for cldf_parameter in cldf_parameters.values()
+            if cldf_parameter['id'] in lparameter_ids
+            # consider parameters without values lparameters by default.
+            or cldf_parameter['id'] not in cparameter_ids}
+        cparameters = {
+            cldf_parameter['id']: CParameter(
+                id='{}-{}'.format(contribution.id, cldf_parameter['id']),
+                contribution_pk=contribution.pk,
+                name=cldf_parameter['name'],
+                description=cldf_parameter['description'])
+            for cldf_parameter in cldf_parameters.values()
+            if cldf_parameter['id'] in cparameter_ids}
+        DBSession.add_all(lparameters.values())
+        DBSession.add_all(cparameters.values())
 
-            for source_string in sorted(set(language_row.get('Source') or ())):
-                st = parse_source(biblio_map, source_string)
-                if set and st.source_pk is not None:
-                    DBSession.add(
-                        LanguageReference(
-                            key=st.bibkey,
-                            description=st.pages,
-                            language_pk=lang.pk,
-                            source_pk=st.source_pk))
-            DBSession.add(
-                ContributionLanguage(
-                    language_pk=lang.pk,
-                    contribution_pk=contrib.pk,
-                    custom_language_name=language_row.get('Name')))
+        parsed_authors = list(map(parse_author, self.authors))
+        contributors = {
+            author_id: all_contributors[author_id]
+            for author_id, _, _ in parsed_authors
+            if author_id in all_contributors}
+        new_contributors = [
+            Contributor(
+                id=author_id,
+                name=parsed_name.full_name,
+                address=author_spec.get('affiliation'),
+                url=author_spec.get('url'),
+                email=author_spec.get('email'))
+            for author_id, author_spec, parsed_name in parsed_authors
+            if author_id not in contributors]
+        DBSession.add_all(new_contributors)
+        contributors.update(
+            (contributor.id, contributor)
+            for contributor in new_contributors)
 
-        DBSession.flush()
-
-        for i, spec in enumerate(self.authors):
-            if not isinstance(spec, dict):
-                spec = {'name': spec}
-            name = spec.get('name', '')
-            parsed_name = HumanName(name)
-            author_id = slug('{}{}'.format(parsed_name.last, parsed_name.first))
-            author = data['Contributor'].get(author_id)
-            if not author:
-                author = data.add(
-                    Contributor,
-                    author_id,
-                    id=author_id,
-                    name=parsed_name.full_name,
-                    address=spec.get('affiliation'),
-                    url=spec.get('url'),
-                    email=spec.get('email'))
-                DBSession.flush()
-            DBSession.add(ContributionContributor(
-                ord=i + 1,
-                primary=spec.get('primary', True),
-                contribution=contrib,
-                contributor=author))
-
-        cparam_ids = {
-            row['Parameter_ID']
-            for row in self.cldf.get('cvalues.csv', ())
-            if 'Parameter_ID' in row}
-
-        if self.cldf.get('ParameterTable'):
-            for param_row in self.cldf.get('ParameterTable', ()):
-                old_id = param_row.get('ID')
-                if not old_id:
-                    continue
-                new_id = '{}-{}'.format(contrib.id, old_id)
-                data.add(
-                    CParameter if old_id in cparam_ids else LParameter,
-                    old_id,
-                    contribution=contrib,
-                    id=new_id,
-                    **map_cols(PARAM_MAP, param_row))
+        if self.sources:
+            sources = [
+                bibtex2source(bibrecord, CrossgramDataSource)
+                for bibrecord in self.sources.records]
+            sources = {
+                bibrecord.id: bibrecord
+                for bibrecord in sources}
+            for source in sources.values():
+                # give sources unique ids
+                source.id = '{}-{}'.format(contribution.id, source.id)
+                # add information bibtex2source doesn't know about
+                source.contribution_pk = contribution.pk
+            DBSession.add_all(sources.values())
         else:
-            # If there is no parameter table fall back to Parameter_ID's in the
-            # value tables
-            for lvalue_row in self.cldf.get('ValueTable', ()):
-                old_id = lvalue_row.get('Parameter_ID')
-                if not old_id or old_id in data['LParameter']:
-                    continue
-                new_id = '{}-{}'.format(contrib.id, old_id)
-                data.add(
-                    LParameter,
-                    old_id,
-                    contribution=contrib,
-                    id=new_id,
-                    name=old_id)
-            for cvalue_row in self.cldf.get('cvalues.csv', ()):
-                old_id = lvalue_row.get('Parameter_ID')
-                if not old_id or old_id in data['CParameter']:
-                    continue
-                new_id = '{}-{}'.format(contrib.id, old_id)
-                data.add(
-                    LParameter,
-                    old_id,
-                    contribution=contrib,
-                    id=new_id,
-                    name=old_id)
+            sources = {}
 
         DBSession.flush()
 
-        cldf_codes = {}
-        for code_row in self.cldf.get('CodeTable', ()):
-            param_id = code_row.get('Parameter_ID')
-            if not param_id:
-                continue
-            if param_id not in cldf_codes:
-                cldf_codes[param_id] = []
-            cldf_codes[param_id].append(code_row)
+        DBSession.add_all(
+            ContributionLanguage(
+                language_pk=languages[cldf_language['id']].pk,
+                contribution_pk=contribution.pk,
+                custom_language_name=cldf_language['name'])
+            for cldf_language in cldf_languages)
 
+        DBSession.add_all(
+            ContributionContributor(
+                ord=ord,
+                primary=spec.get('primary', True),
+                contribution_pk=contribution.pk,
+                contributor_pk=contributors[author_id].pk)
+            for ord, (author_id, spec, _) in enumerate(parsed_authors, 1))
+
+        DBSession.add_all(
+            LanguageReference(
+                key=st.bibkey,
+                description=st.pages,
+                language_pk=languages[cldf_language['id']].pk,
+                source_pk=st.source_pk)
+            for cldf_language in cldf_languages
+            for source_string in sorted(set(cldf_language.get('source') or ()))
+            if (st := parse_source(sources, source_string))
+            and st.source_pk is not None)
+
+        constructions = {
+            cldf_construction['id']: Construction(
+                id='{}-{}'.format(contribution.id, cldf_construction['id']),
+                name=cldf_construction['name'],
+                description=cldf_construction['description'],
+                language_pk=languages[cldf_construction['languageReference']].pk,
+                contribution_pk=contribution.pk)
+            for cldf_construction in cldf_constructions}
+        DBSession.add_all(constructions.values())
+
+        # add map icons to the codes
         all_icons = [getattr(i, 'name', i) for i in ORDERED_ICONS]
-        for param_id, code_rows in cldf_codes.items():
-            code_icons = cycle(all_icons)
-            for code_row in code_rows:
-                old_id = code_row.get('ID')
-                param_id = code_row.get('Parameter_ID')
-                if not old_id or not param_id:
-                    continue
-                code_icon = next(code_icons)
-                if (custom_icon := code_row.get('Map_Icon')):
+        code_icons = {}
+        for param_id, param_codes in cldf_codes.items():
+            param_icons = cycle(all_icons)
+            for cldf_code in param_codes:
+                code_icon = next(param_icons)
+                if (custom_icon := cldf_code.get('Map_Icon')):
                     if re.fullmatch(r'[cstfd][0-9a-fA-F]{6}', custom_icon):
                         code_icon = custom_icon
                     else:
                         msg = "{}:Param {}:Code {}: invalid icon '{}'".format(
-                            contrib.id, param_id, old_id, custom_icon)
+                            contribution.id, param_id, old_id, custom_icon)
                         print(msg, file=sys.stderr)
+                code_icons[cldf_code['id']] = code_icon
 
-                new_id = '{}-{}'.format(contrib.id, old_id)
-                if param_id in cparam_ids:
-                    param = data['CParameter'].get(param_id)
-                    data.add(
-                        CCode,
-                        old_id,
-                        parameter=param,
-                        id=new_id,
-                        jsondata={'icon': code_icon},
-                        **map_cols(CCODE_MAP, code_row))
-                else:
-                    param = data['LParameter'].get(param_id)
-                    data.add(
-                        LCode,
-                        old_id,
-                        parameter=param,
-                        id=new_id,
-                        jsondata={'icon': code_icon},
-                        **map_cols(LCODE_MAP, code_row))
+        lcodes = {
+            cldf_code['id']: LCode(
+                id='{}-{}'.format(contribution.id, cldf_code['id']),
+                parameter_pk=lparameter.pk,
+                name=cldf_code['name'],
+                description=cldf_code['description'],
+                jsondata=dict(icon=code_icons[cldf_code['id']]))
+            for parameter_id, param_codes in cldf_codes.items()
+            for cldf_code in param_codes
+            if (lparameter := lparameters.get(parameter_id))}
+        ccodes = {
+            cldf_code['id']: CCode(
+                id='{}-{}'.format(contribution.id, cldf_code['id']),
+                unitparameter_pk=cparameter.pk,
+                name=cldf_code['name'],
+                description=cldf_code['description'],
+                jsondata=dict(icon=code_icons[cldf_code['id']]))
+            for parameter_id, param_codes in cldf_codes.items()
+            for cldf_code in param_codes
+            if (cparameter := cparameters.get(parameter_id))}
 
-        for index, example_row in enumerate(self.cldf.get('ExampleTable', ())):
-            old_id = example_row.get('ID')
-            lang_new_id = language_id_map.get(example_row['Language_ID'])
-            lang = data['Variety'].get(lang_new_id)
-            if not old_id or not lang:
-                continue
-            new_id = '{}-{}'.format(contrib.number or contrib.id, index + 1)
-            example_row = _merge_glosses(example_row)
-            example = data.add(
-                Example,
-                old_id,
-                language=lang,
-                contribution=contrib,
-                id=new_id,
-                **map_cols(EXAMPLE_MAP, example_row))
+        DBSession.add_all(lcodes.values())
+        DBSession.add_all(ccodes.values())
 
-            DBSession.flush()
-            st = parse_source(biblio_map, example_row.get('Source') or '')
-            if st and st.source_pk is not None:
-                DBSession.add(SentenceReference(
-                    key=st.bibkey,
-                    description=st.pages,
-                    sentence_pk=example.pk,
-                    source_pk=st.source_pk))
+        examples = {
+            cldf_example['id']: Example(
+                id='{}-{}'.format(contribution.number or contribution.id, ord),
+                name=cldf_example['primaryText'],
+                description=cldf_example['translatedText'],
+                analyzed='\t'.join(
+                    (s or '') for s in cldf_example['analyzedWord']),
+                gloss='\t'.join(
+                    (s or '') for s in cldf_example['gloss']),
+                comment=cldf_example['comment'],
+                language_pk=languages[cldf_example['languageReference']].pk,
+                contribution_pk=contribution.pk)
+            for ord, cldf_example in enumerate(cldf_examples, 1)}
+        DBSession.add_all(examples.values())
 
         DBSession.flush()
 
-        for constr_row in self.cldf.get('constructions.csv', ()):
-            old_id = constr_row.get('ID')
-            if not old_id:
-                continue
-            new_id = '{}-{}'.format(contrib.id, old_id)
-            lang_new_id = language_id_map.get(constr_row['Language_ID'])
-            lang = data['Variety'].get(lang_new_id)
-            constr = data.add(
-                Construction,
-                old_id,
-                language=lang,
-                contribution=contrib,
-                id=new_id,
-                **map_cols(CONSTR_MAP, constr_row))
+        DBSession.add_all(
+            SentenceReference(
+                key=st.bibkey,
+                description=st.pages,
+                sentence_pk=examples[cldf_example['id']].pk,
+                source_pk=st.source_pk)
+            for cldf_example in cldf_examples
+            for source_string in sorted(set(cldf_example.get('source') or ()))
+            if (st := parse_source(sources, source_string))
+            and st.source_pk is not None)
+        DBSession.add_all(
+            UnitReference(
+                key=st.bibkey,
+                description=st.pages,
+                unit_pk=constructions[cldf_construction['id']].pk,
+                source_pk=st.source_pk)
+            for cldf_construction in cldf_constructions
+            for source_string in sorted(set(cldf_construction.get('source') or ()))
+            if (st := parse_source(sources, source_string))
+            and st.source_pk is not None)
 
-            DBSession.flush()
-            for source_string in sorted(set(constr_row.get('Source') or ())):
-                st = parse_source(biblio_map, source_string)
-                if st and st.source_pk is not None:
-                    DBSession.add(UnitReference(
-                        key=st.bibkey,
-                        description=st.pages,
-                        unit_pk=constr.pk,
-                        source_pk=st.source_pk))
+        DBSession.add_all(
+            UnitSentence(
+                unit_pk=constructions[cldf_construction['id']].pk,
+                sentence_pk=examples[example_id].pk)
+            for cldf_construction in cldf_constructions
+            for example_id in sorted(set(cldf_construction.get('exampleReference') or ())))
 
-            for ex_id in sorted(set(constr_row.get('Example_IDs', ()))):
-                example = data['Example'].get(ex_id)
-                if example:
-                    DBSession.add(UnitSentence(unit=constr, sentence=example))
+        lvaluesets = {}
+        for cldf_value in cldf_lvalues:
+            language_id = cldf_value['languageReference']
+            parameter_id = cldf_value['parameterReference']
+            if (language_id, parameter_id) not in lvaluesets:
+                lvaluesets[language_id, parameter_id] = ValueSet(
+                    id='{}-{}-{}'.format(
+                        contribution.id, language_id, parameter_id),
+                    language_pk=languages[language_id].pk,
+                    parameter_pk=lparameters[parameter_id].pk,
+                    contribution_pk=contribution.pk)
+        DBSession.add_all(lvaluesets.values())
+
+        cvalues = {
+            cldf_value['id']: UnitValue(
+                id='{}-{}'.format(contribution.id, cldf_value['id']),
+                unit_pk=constructions[cldf_value['Construction_ID']].pk,
+                unitparameter_pk=cparameters[cldf_value['parameterReference']].pk,
+                unitdomainelement=(code := ccodes.get(cldf_value['codeReference'])),
+                name=code.name if code and code.name else cldf_value['value'],
+                contribution_pk=contribution.pk,
+                description=cldf_value.get('comment'))
+            for cldf_value in cldf_cvalues}
+        DBSession.add_all(cvalues.values())
 
         DBSession.flush()
 
         valueset_refs = OrderedDict()
-        for value_row in self.cldf.get('ValueTable', ()):
-            old_id = value_row.get('ID')
-            lang_new_id = language_id_map.get(value_row['Language_ID'])
-            lang = data['Variety'].get(lang_new_id)
-            param = data['LParameter'].get(value_row['Parameter_ID'])
-            code = data['LCode'].get(value_row['Code_ID'])
-            value_name = code.name if code and code.name else value_row['Value']
-            if not old_id or not lang or not param or not value_name:
-                continue
-            new_id = '{}-{}'.format(contrib.id, old_id)
-
-            valueset = data['ValueSet'].get((lang.pk, param.pk))
-            if not valueset:
-                valueset = data.add(
-                    ValueSet, (lang.pk, param.pk), id=new_id, language=lang,
-                    parameter=param, contribution=contrib)
-
-            DBSession.flush()
-            lvalue = data['Value'].get((valueset.pk, value_name))
-            if not lvalue:
-                lvalue = data.add(
-                    Value, (valueset.pk, value_name),
-                    id=new_id, name=value_name, valueset=valueset,
-                    description=value_row.get('Comment'),
-                    domainelement=code)
-
-            for source_string in sorted(set(value_row.get('Source') or ())):
-                st = parse_source(biblio_map, source_string)
+        for cldf_value in cldf_lvalues:
+            valueset = lvaluesets[
+                cldf_value['languageReference'],
+                cldf_value['parameterReference']]
+            for source_string in sorted(set(cldf_value.get('source') or ())):
+                st = parse_source(sources, source_string)
                 if st and st.source_pk is not None:
                     # collect sources for all values in the same value set
                     if valueset.pk not in valueset_refs:
-                        valueset_refs[valueset.pk] = list()
-                    valueset_refs[valueset.pk].append(st)
+                        valueset_refs[valueset.pk] = set()
+                    valueset_refs[valueset.pk].add(st)
+        DBSession.add_all(
+            ValueSetReference(
+                key=st.bibkey,
+                description=st.pages or None,
+                valueset_pk=valueset_pk,
+                source_pk=st.source_pk)
+            for valueset_pk, st_set in valueset_refs.items()
+            for st in sorted(st_set))
 
-            DBSession.flush()
-            for ex_id in sorted(set(value_row.get('Example_IDs', ()))):
-                example = data['Example'].get(ex_id)
-                if example:
-                    DBSession.add(ValueSentence(value=lvalue, sentence=example))
+        DBSession.add_all(
+            UnitValueSentence(
+                unitvalue=cvalues[cldf_value['id']],
+                sentence=examples[example_id])
+            for cldf_value in cldf_cvalues
+            for example_id in sorted(set(cldf_value.get('exampleReference') or ())))
 
-        # attach collected sources from values to the value set
-        valuesets = DBSession.query(ValueSet)\
-            .filter(ValueSet.contribution == contrib)
-        for valueset in valuesets:
-            source_tuples = sorted(set(valueset_refs.get(valueset.pk, ())))
-            for st in source_tuples:
-                DBSession.add(ValueSetReference(
-                    key=st.bibkey,
-                    description=st.pages or None,
-                    valueset_pk=valueset.pk,
-                    source_pk=st.source_pk))
-            valueset.source = ';'.join(st[2] for st in source_tuples)
+        DBSession.add_all(
+            UnitValueReference(
+                key=st.bibkey,
+                description=st.pages,
+                unitvalue_pk=cvalues[cldf_value['id']].pk,
+                source_pk=st.source_pk)
+            for cldf_value in cldf_cvalues
+            for source_string in sorted(set(cldf_value.get('source') or ()))
+            if (st := parse_source(sources, source_string))
+            and st.source_pk is not None)
 
-        for cvalue_row in self.cldf.get('cvalues.csv', ()):
-            old_id = cvalue_row.get('ID')
-            constr = data['Construction'].get(cvalue_row['Construction_ID'])
-            param = data['CParameter'].get(cvalue_row['Parameter_ID'])
-            code = data['CCode'].get(cvalue_row['Code_ID'])
-            value_name = code.name if code else cvalue_row['Value']
-            if not old_id or not constr or not param or not value_name:
+        unique_constraint = set()
+        lvalues = {}
+        for cldf_value in cldf_lvalues:
+            unique_fields = (
+                cldf_value['languageReference'],
+                cldf_value['parameterReference'],
+                cldf_value['value'],
+                cldf_value['codeReference'])
+            # deal with a dataset violating a uniqueness constraint
+            if unique_fields in unique_constraint:
                 continue
-            new_id = '{}-{}'.format(contrib.id, old_id)
+            else:
+                unique_constraint.add(unique_fields)
+            valueset = lvaluesets[
+                cldf_value['languageReference'],
+                cldf_value['parameterReference']]
+            code = lcodes.get(cldf_value['codeReference'])
+            lvalues[cldf_value['id']] = Value(
+                id='{}-{}'.format(contribution.id, cldf_value['id']),
+                valueset_pk=valueset.pk,
+                name=code.name if code and code.name else cldf_value['value'],
+                domainelement_pk=code.pk if code else None,
+                description=cldf_value.get('comment'))
+        DBSession.add_all(lvalues.values())
 
-            cvalue = data.add(
-                UnitValue, old_id,
-                id=new_id, name=value_name, contribution=contrib, unit=constr,
-                description=cvalue_row.get('Comment'),
-                unitparameter=param, unitdomainelement=code)
+        DBSession.flush()
 
-            DBSession.flush()
-            for ex_id in sorted(set(cvalue_row.get('Example_IDs') or ())):
-                example = data['Example'].get(ex_id)
-                if example:
-                    DBSession.add(UnitValueSentence(
-                        unitvalue=cvalue, sentence=example))
+        DBSession.add_all(
+            ValueSentence(
+                value_pk=lvalues[cldf_value['id']].pk,
+                sentence_pk=examples[example_id].pk)
+            for cldf_value in cldf_lvalues
+            for example_id in sorted(set(cldf_value.get('exampleReference') or ()))
+            if cldf_value['id'] in lvalues)
 
-            for source_string in sorted(set(cvalue_row.get('Source') or ())):
-                st = parse_source(biblio_map, source_string)
-                if st and st.source_pk is not None:
-                    DBSession.add(UnitValueReference(
-                        key=st.bibkey,
-                        description=st.pages or None,
-                        unitvalue=cvalue,
-                        source_pk=st.source_pk))
+        return new_languages, new_contributors
 
     @classmethod
     def load(cls, path, contrib_md):

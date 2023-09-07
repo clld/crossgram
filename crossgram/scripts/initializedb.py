@@ -1,6 +1,5 @@
 from __future__ import unicode_literals
 
-from itertools import cycle, groupby
 import pathlib
 import re
 
@@ -10,7 +9,6 @@ import cldfcatalog
 from clld.cliutil import Data
 from clld.db.meta import DBSession
 from clld.db.models import common
-from clld.web.icon import ORDERED_ICONS
 from clldutils import jsonlib
 from clldutils.misc import slug
 from clld_glottologfamily_plugin.util import load_families
@@ -105,7 +103,8 @@ def main(args):
     internal = input('[i]nternal or [e]xternal data (default: e): ').strip().lower() == 'i'
     which_submission = input("submission id or 'all' for all submissions (default: all): ").strip().lower() or 'all'
 
-    data = Data()
+    all_languages = {}
+    all_contributors = {}
 
     dataset = common.Dataset(
         id=crossgram.__name__,
@@ -120,13 +119,26 @@ def main(args):
         jsondata={
             'license_icon': 'cc-by.png',
             'license_name': 'Creative Commons Attribution 4.0 International License'})
-
-    for i, (id_, name) in enumerate([
-        ('haspelmathmartin', 'Martin Haspelmath'),
-    ]):
-        ed = data.add(common.Contributor, id_, id=id_, name=name)
-        common.Editor(dataset=dataset, contributor=ed, ord=i + 1)
     DBSession.add(dataset)
+
+    DBSession.flush()
+
+    raw_editors = [
+        ('haspelmathmartin', 'Martin Haspelmath'),
+    ]
+    all_contributors.update(
+        (editor_id, common.Contributor(id=editor_id, name=name))
+        for editor_id, name in raw_editors)
+    DBSession.add_all(all_contributors.values())
+
+    DBSession.flush()
+
+    DBSession.add_all(
+        common.Editor(
+            dataset_pk=dataset.pk,
+            contributor_pk=contributor.pk,
+            ord=ord)
+        for ord, contributor in enumerate(all_contributors.values(), 1))
 
     internal_repo = pathlib.Path('../../crossgram/crossgram-internal')
     cache_dir = internal_repo / 'datasets'
@@ -173,9 +185,7 @@ def main(args):
         git_https = re.sub(
             '^git@([^:]*):', r'https://\1/', contrib_md.get('repo') or '')
 
-        contrib = data.add(
-            models.CrossgramData,
-            sid,
+        contrib = models.CrossgramData(
             id=sid,
             number=int(contrib_md['number']),
             published=published,
@@ -183,20 +193,32 @@ def main(args):
             doi=contrib_md.get('doi'),
             git_repo=git_https,
             description=intro or submission.readme)
+        DBSession.add(contrib)
 
-        submission.add_to_database(data, contrib)
+        DBSession.flush()
+
+        new_languages, new_contributors = submission.add_to_database(
+            contrib, all_languages, all_contributors)
+        all_languages.update(
+            (language.id, language)
+            for language in new_languages)
+        all_contributors.update(
+            (contributor.id, contributor)
+            for contributor in new_contributors)
+
         print('... done')
 
     DBSession.flush()
     print('Loading language family data...')
     catconf = cldfcatalog.Config.from_file()
     glottolog_path = catconf.get_clone('glottolog')
+    languages_in_glottolog = [
+        language
+        for language_id, language in all_languages.items()
+        if re.fullmatch('[a-z]{4}[0-9]{4}', language_id)]
     load_families(
         Data(),
-        [
-            v for v in DBSession.query(models.Variety)
-            if re.fullmatch('[a-z]{4}[0-9]{4}', v.id)
-        ],
+        languages_in_glottolog,
         strict=False,
         glottolog_repos=glottolog_path)
     print('... done')
@@ -376,19 +398,6 @@ def prime_cache(args):
         ) AS s
         WHERE variety.pk = s.language_pk
     """))
-
-    DBSession.flush()
-    print('... done')
-
-    print('Making pretty colourful dots for parameter values...')
-    all_icons = [icon.name for icon in ORDERED_ICONS]
-
-    code_query = DBSession.query(common.DomainElement)\
-        .order_by(common.DomainElement.parameter_pk, common.DomainElement.id)
-    for _, param_codes in groupby(code_query, lambda c: c.parameter_pk):
-        icons = cycle(all_icons)
-        for code in param_codes:
-            code.update_jsondata(icon=next(icons))
 
     DBSession.flush()
     print('... done')
