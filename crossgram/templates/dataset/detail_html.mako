@@ -9,7 +9,8 @@
 ##     </div>
 ## </%def>
 
-<h2>Welcome to CrossGram</h2>
+## TODO: remove 'beta'
+<h2>Welcome to CrossGram<sup><em>beta</em></sup></h2>
 
 <p>
   CrossGram is a publication repository for cross-linguistic data resulting from
