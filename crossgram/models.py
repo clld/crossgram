@@ -48,6 +48,7 @@ class CrossgramData(CustomModelMixin, Contribution):
     pk = Column(Integer, ForeignKey('contribution.pk'), primary_key=True)
     number = Column(Integer)
     published = Column(Date)
+    original_year = Column(Unicode)
     toc = Column(Unicode)
     doi = Column(Unicode)
     git_repo = Column(Unicode)

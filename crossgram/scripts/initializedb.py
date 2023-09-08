@@ -189,6 +189,7 @@ def main(args):
             id=sid,
             number=int(contrib_md['number']),
             published=published,
+            original_year=contrib_md.get('original-year') or str(published.year),
             name=contrib_md.get('title') or submission.title,
             doi=contrib_md.get('doi'),
             git_repo=git_https,
