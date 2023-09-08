@@ -215,7 +215,10 @@ class CrossgramDatasets(DataTable):
             self, 'number', model_col=models.CrossgramData.number)
         name = LinkCol(self, 'name')
         contributors = ContributorsCol(self, 'contributor', sTitle='Authors')
-        date = DateCol(self, 'published')
+        # date = DateCol(self, 'published')
+        year = Col(
+            self, 'original_year', sTitle='Year',
+            model_col=models.CrossgramData.original_year)
         data_link = Col(
             self,
             'data_source',
@@ -224,7 +227,10 @@ class CrossgramDatasets(DataTable):
             sTitle='Data source',
             format=lambda i: i.doi_link() or i.git_link())
         cite_button = CitationCol(self, 'cite')
-        return [number, name, contributors, date, data_link, cite_button]
+        return [number, name, contributors, year, data_link, cite_button]
+
+    def get_options(self):
+        return {'aaSorting': [[3, 'asc']]}
 
 
 class ContributionContributors(DataTable):
