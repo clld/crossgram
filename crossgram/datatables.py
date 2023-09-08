@@ -285,7 +285,7 @@ class Languages(datatables.Languages):
                 self, 'custom_name',
                 contribution_pk=self.crossgramdata.pk,
                 sTitle='Name')
-            return [custom_name, glottocode, family, source, example_count]
+            return [custom_name, glottocode, family, source]
         else:
             name = LinkCol(self, 'name')
             contrib = ContributionsCol(self, 'contributions')
