@@ -39,6 +39,12 @@
             </div>
             <div class="span4">
                 <div class="well well-small">
+                    % if ctx.doi:
+                    <p>Zenodo: ${ctx.doi_link()}</p>
+                    % endif
+                    % if ctx.git_repo:
+                    <p>Git: ${ctx.git_link()}</p>
+                    % endif
                     ${ctx.toc or ''|n}
                 </div>
             </div>
