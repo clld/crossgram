@@ -42,6 +42,35 @@ from crossgram.models import (
     CrossgramDataSource,
 )
 
+MARTINS_FAVOURITE_ICONS = [
+    'c0000dd',
+    'cdd0000',
+    'cffff00',
+    'c009900',
+    'c990099',
+    's0000dd',
+    'sdd0000',
+    'sffff00',
+    's009900',
+    's990099',
+    'cffffff',
+    'c00ff00',
+    'c00ffff',
+    'ccccccc',
+    'cff6600',
+    'sffffff',
+    's00ff00',
+    's00ffff',
+    'scccccc',
+    'sff6600',
+]
+
+CODE_ICONS = MARTINS_FAVOURITE_ICONS[:]
+CODE_ICONS.extend(
+    icon
+    for i in ORDERED_ICONS
+    if (icon := getattr(i, 'name', i)) not in MARTINS_FAVOURITE_ICONS)
+
 
 def parse_author(author_spec):
     if not isinstance(author_spec, dict):
@@ -303,10 +332,9 @@ class CLDFBenchSubmission:
         DBSession.add_all(constructions.values())
 
         # add map icons to the codes
-        all_icons = [getattr(i, 'name', i) for i in ORDERED_ICONS]
         code_icons = {}
         for param_id, param_codes in cldf_codes.items():
-            param_icons = cycle(all_icons)
+            param_icons = cycle(CODE_ICONS)
             for cldf_code in param_codes:
                 code_icon = next(param_icons)
                 if (custom_icon := cldf_code.get('Map_Icon')):
