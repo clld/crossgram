@@ -230,7 +230,7 @@ class CrossgramDatasets(DataTable):
         return [name, contributors, year, data_link, cite_button]
 
     def get_options(self):
-        return {'aaSorting': [[3, 'asc']]}
+        return {'aaSorting': [[2, 'asc']]}
 
 
 class ContributionContributors(DataTable):
