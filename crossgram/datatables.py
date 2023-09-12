@@ -211,8 +211,8 @@ class FilteredLanguageSourcesCol(Col):
 class CrossgramDatasets(DataTable):
 
     def col_defs(self):
-        number = NumberCol(
-            self, 'number', model_col=models.CrossgramData.number)
+        # number = NumberCol(
+        #     self, 'number', model_col=models.CrossgramData.number)
         name = LinkCol(self, 'name')
         contributors = ContributorsCol(self, 'contributor', sTitle='Authors')
         # date = DateCol(self, 'published')
@@ -227,7 +227,7 @@ class CrossgramDatasets(DataTable):
             sTitle='Data source',
             format=lambda i: i.doi_link() or i.git_link())
         cite_button = CitationCol(self, 'cite')
-        return [number, name, contributors, year, data_link, cite_button]
+        return [name, contributors, year, data_link, cite_button]
 
     def get_options(self):
         return {'aaSorting': [[3, 'asc']]}
