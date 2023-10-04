@@ -125,6 +125,7 @@ class LCode(CustomModelMixin, DomainElement):
 @implementer(interfaces.ISentence)
 class Example(CustomModelMixin, Sentence):
     pk = Column(Integer, ForeignKey('sentence.pk'), primary_key=True)
+    ord = Column(Integer)
     contribution_pk = Column(Integer, ForeignKey('contribution.pk'))
     contribution = relationship(CrossgramData, backref='examples')
 

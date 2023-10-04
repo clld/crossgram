@@ -607,11 +607,12 @@ class Examples(datatables.Sentences):
         details = DetailsRowLinkCol(self, 'd')
 
         if self.crossgramdata:
+            ord = NumberCol(self, 'number', model_col=models.Example.ord)
             language = CustomLangNameCol(
                 self, 'custom_name', self.crossgramdata.pk,
                 get_obj=lambda i: i.language,
                 sTitle='Language')
-            return [language, primary, gloss, translation, source, details]
+            return [ord, language, primary, gloss, translation, source, details]
         else:
             language = LinkCol(
                 self,
@@ -630,9 +631,7 @@ class Examples(datatables.Sentences):
                 details]
 
     def get_options(self):
-        # The super class overrides `get_options` to disable default sorting.
-        # I like sorted tables.
-        return {}
+        return {'aaSorting': [[1, 'asc']]}
 
 
 class Sources(datatables.Sources):

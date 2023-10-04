@@ -373,6 +373,7 @@ class CLDFBenchSubmission:
         examples = {
             cldf_example['id']: Example(
                 id='{}-{}'.format(contribution.number or contribution.id, ord),
+                ord=ord,
                 name=cldf_example['primaryText'],
                 description=cldf_example['translatedText'],
                 analyzed='\t'.join(
