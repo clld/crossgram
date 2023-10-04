@@ -554,14 +554,14 @@ class LValues(datatables.Values):
         # XXX: can `parameter` and `language` be set at the same time?
         # ^ that would return a single value…
         if self.parameter:
-            link_to_map = LinkToMapCol(
-                self, 'm', get_object=lambda i: i.valueset.language)
+            # link_to_map = LinkToMapCol(
+            #     self, 'm', get_object=lambda i: i.valueset.language)
             lang = CustomLangNameCol(
                 self, 'custom_name', self.parameter.contribution_pk,
                 get_obj=lambda i: i.valueset.language,
                 sTitle='Language')
             # XXX add contribution col?
-            return [lang, value, comment, sources, link_to_map]
+            return [lang, value, comment, sources]
         elif self.language:
             return [contrib, param, value, comment, sources]
         else:
