@@ -593,7 +593,7 @@ class Examples(datatables.Sentences):
     def col_defs(self):
         primary = LinkCol(
             self, 'name', sTitle='Primary text', sClass="object-language")
-        analyzed = TsvCol(self, 'analyzed', sTitle='Analyzed text')
+        # analyzed = TsvCol(self, 'analyzed', sTitle='Analyzed text')
         gloss = TsvCol(self, 'gloss', sClass="gloss")
         translation = Col(
             self,
@@ -607,7 +607,7 @@ class Examples(datatables.Sentences):
                 self, 'custom_name', self.crossgramdata.pk,
                 get_obj=lambda i: i.language,
                 sTitle='Language')
-            return [language, primary, analyzed, gloss, translation, details]
+            return [language, primary, gloss, translation, details]
         else:
             language = LinkCol(
                 self,
@@ -622,7 +622,7 @@ class Examples(datatables.Sentences):
                 model_col=models.CrossgramData.name,
                 get_obj=lambda i: i.contribution)
             return [
-                language, primary, analyzed, gloss, translation, contrib,
+                language, primary, gloss, translation, contrib,
                 details]
 
     def get_options(self):
