@@ -13,7 +13,7 @@ Possible values:
 <table class="table table-hover table-condensed domain" style="width: auto;">
     <thead>
         <tr>
-            <th>Value</th><th>Representation</th>
+            <th>Value</th><th>No. of Constructions</th>
         </tr>
     </thead>
     <tbody>
