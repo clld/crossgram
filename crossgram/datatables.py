@@ -228,7 +228,10 @@ class ExamplesCol(Col):
             for example in getattr(obj, 'sentences', ())
             if not contribution
             or example.contribution_pk == contribution.pk]
-        examples.sort(key=lambda ex: ex.number)
+        if contribution:
+            examples.sort(key=lambda ex: ex.number)
+        else:
+            examples.sort(key=lambda ex: (ex.contribution.number, ex.number))
         return semicolon_separated_span(
             link(self.dt.req, example, label=_label(example))
             for example in examples)
