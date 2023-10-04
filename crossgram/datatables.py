@@ -631,7 +631,10 @@ class Examples(datatables.Sentences):
                 details]
 
     def get_options(self):
-        return {'aaSorting': [[1, 'asc']]}
+        if self.crossgramdata:
+            return {'aaSorting': [[1, 'asc']]}
+        else:
+            return {}
 
 
 class Sources(datatables.Sources):
