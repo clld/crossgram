@@ -208,6 +208,32 @@ class FilteredLanguageSourcesCol(Col):
             if ref.source and self.in_contribution(ref.source))
 
 
+class ExamplesCol(Col):
+    """Column listing linked examples."""
+
+    __kw__ = {'bSearchable': False, 'bSortable': False}
+
+    def format(self, item):
+        obj = self.get_obj(item)
+        contribution = getattr(self.dt, 'crossgramdata', None)
+
+        def _label(example):
+            if contribution:
+                return f'({example.ord})'
+            else:
+                return f'({example.id})'
+
+        examples = [
+            example
+            for example in getattr(obj, 'sentences', ())
+            if not contribution
+            or example.contribution_pk == contribution.pk]
+        examples.sort(key=lambda ex: ex.ord)
+        return semicolon_separated_span(
+            link(self.dt.req, example, label=_label(example))
+            for example in examples)
+
+
 class CrossgramDatasets(DataTable):
 
     def col_defs(self):
@@ -256,7 +282,8 @@ class Languages(datatables.Languages):
             .join(models.Variety.contribution_assocs) \
             .options(
                 joinedload(common.Language.references)
-                .joinedload(models.LanguageReference.source))
+                .joinedload(models.LanguageReference.source),
+                joinedload(common.Language.sentences))
 
         if self.crossgramdata:
             query = query.filter(
@@ -280,23 +307,24 @@ class Languages(datatables.Languages):
         source = FilteredLanguageSourcesCol(
             self, 'source', contribution=self.crossgramdata)
         family = FamilyCol(self, 'family', models.Variety)
-        example_count = ExampleCountCol(
-            self,
-            'example_count',
-            model_col=models.Variety.example_count,
-            sTitle='Examples')
         linktomap = LinkToMapCol(self, 'm')
+        examples = ExamplesCol(self, 'examples')
         if self.crossgramdata:
             custom_name = CustomLangNameCol(
                 self, 'custom_name',
                 contribution_pk=self.crossgramdata.pk,
                 sTitle='Name')
-            return [custom_name, glottocode, family, source]
+            return [custom_name, glottocode, family, source, examples]
         else:
+            # example_count = ExampleCountCol(
+            #     self,
+            #     'example_count',
+            #     model_col=models.Variety.example_count,
+            #     sTitle='Examples')
             name = LinkCol(self, 'name')
             contrib = ContributionsCol(self, 'contributions')
             return [
-                name, glottocode, family, contrib, source, example_count,
+                name, glottocode, family, contrib, source, examples,
                 linktomap]
 
 
