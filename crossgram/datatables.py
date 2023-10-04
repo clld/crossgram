@@ -581,7 +581,10 @@ class Examples(datatables.Sentences):
     __constraints__ = [common.Parameter, common.Language, models.CrossgramData]
 
     def base_query(self, query):
-        query = super().base_query(query)
+        query = super().base_query(query) \
+            .options(
+                joinedload(common.Sentence.references)
+                .joinedload(common.SentenceReference.source))
 
         if self.crossgramdata:
             query = query.filter(models.Example.contribution_pk == self.crossgramdata.pk)
@@ -600,6 +603,7 @@ class Examples(datatables.Sentences):
             'description',
             sTitle=self.req.translate('Translation'),
             sClass="translation")
+        source = RefsCol(self, 'source')
         details = DetailsRowLinkCol(self, 'd')
 
         if self.crossgramdata:
@@ -607,7 +611,7 @@ class Examples(datatables.Sentences):
                 self, 'custom_name', self.crossgramdata.pk,
                 get_obj=lambda i: i.language,
                 sTitle='Language')
-            return [language, primary, gloss, translation, details]
+            return [language, primary, gloss, translation, source, details]
         else:
             language = LinkCol(
                 self,
@@ -622,7 +626,7 @@ class Examples(datatables.Sentences):
                 model_col=models.CrossgramData.name,
                 get_obj=lambda i: i.contribution)
             return [
-                language, primary, gloss, translation, contrib,
+                language, primary, gloss, translation, source, contrib,
                 details]
 
     def get_options(self):
