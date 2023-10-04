@@ -226,8 +226,8 @@ class CrossgramDatasets(DataTable):
             bSortable=False,
             sTitle='Data source',
             format=lambda i: i.doi_link() or i.git_link())
-        cite_button = CitationCol(self, 'cite')
-        return [name, contributors, year, data_link, cite_button]
+        # cite_button = CitationCol(self, 'cite')
+        return [name, contributors, year, data_link]
 
     def get_options(self):
         return {'aaSorting': [[2, 'asc']]}
