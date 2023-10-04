@@ -219,7 +219,7 @@ class ExamplesCol(Col):
 
         def _label(example):
             if contribution:
-                return f'({example.ord})'
+                return f'({example.number})'
             else:
                 return f'({example.id})'
 
@@ -228,7 +228,7 @@ class ExamplesCol(Col):
             for example in getattr(obj, 'sentences', ())
             if not contribution
             or example.contribution_pk == contribution.pk]
-        examples.sort(key=lambda ex: ex.ord)
+        examples.sort(key=lambda ex: ex.number)
         return semicolon_separated_span(
             link(self.dt.req, example, label=_label(example))
             for example in examples)
@@ -635,12 +635,12 @@ class Examples(datatables.Sentences):
         details = DetailsRowLinkCol(self, 'd')
 
         if self.crossgramdata:
-            ord = NumberCol(self, 'number', model_col=models.Example.ord)
+            number = NumberCol(self, 'number', model_col=models.Example.number)
             language = CustomLangNameCol(
                 self, 'custom_name', self.crossgramdata.pk,
                 get_obj=lambda i: i.language,
                 sTitle='Language')
-            return [ord, language, primary, gloss, translation, source, details]
+            return [number, language, primary, gloss, translation, source, details]
         else:
             language = LinkCol(
                 self,
