@@ -4,6 +4,8 @@
 
 <h2>${_('Unit Parameter')}: ${ctx.name or ctx.id}</h2>
 
+<p><em>From ${_('Contribution')}: ${h.link(request, ctx.contribution)}</em></p>
+
 <div>
     <% dt = request.registry.getUtility(h.interfaces.IDataTable, 'unitvalues'); dt = dt(request, h.models.UnitValue, unitparameter=ctx) %>
     ${dt.render()}

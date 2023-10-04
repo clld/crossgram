@@ -5,6 +5,8 @@
 
 <h2>${_('Parameter')}: ${ctx.name or ctx.id}</h2>
 
+<p><em>From ${_('Contribution')}: ${h.link(request, ctx.contribution)}</em></p>
+
 % if ctx.description:
 <p>${ctx.description}</p>
 % endif
