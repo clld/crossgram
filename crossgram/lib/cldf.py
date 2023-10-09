@@ -530,7 +530,10 @@ class CLDFBenchSubmission:
         assert path.exists(), str(path)
 
         try:
-            cldf_dataset = next(iter_datasets(path / 'cldf'))
+            cldf_dataset = next(
+                dataset
+                for dataset in iter_datasets(path / 'cldf')
+                if dataset.module == 'StructureDataset')
         except StopIteration:
             raise ValueError('No cldf metadata file found in {}'.format(path))
 
