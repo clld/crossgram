@@ -255,8 +255,8 @@ class CLDFBenchSubmission:
                 description=cldf_parameter['description'])
             for cldf_parameter in cldf_parameters.values()
             if cldf_parameter['id'] in cparameter_ids}
-        DBSession.add_all(lparameters.values())
-        DBSession.add_all(cparameters.values())
+        DBSession.add_all(sorted(lparameters.values(), key=lambda p: p.id))
+        DBSession.add_all(sorted(cparameters.values(), key=lambda p: p.id))
 
         parsed_authors = list(map(parse_author, self.authors))
         contributors = {
