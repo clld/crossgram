@@ -22,6 +22,7 @@ import crossgram
 from crossgram import models
 from crossgram.lib.cldf import CLDFBenchSubmission
 from crossgram.lib.cldf_zenodo import download_from_doi
+from crossgram.lib.horrible_denormaliser import BlockEncoder
 
 
 def download_data(sid, contrib_md, cache_dir):
@@ -299,19 +300,17 @@ def prime_cache(args):
         for language in db_languages.values()
         if (identifier := isocodes.get(language.id)))
 
-    language_names = {}
-    lang_name_query = DBSession.query(models.ContributionLanguage)\
+    name_encoder = BlockEncoder()
+    source_encoder = BlockEncoder()
+    contrib_lang_query = DBSession.query(models.ContributionLanguage)\
         .join(models.Language)
-    for contrib_lang in lang_name_query:
+    for contrib_lang in contrib_lang_query:
         lang_id = contrib_lang.language.id
         contrib_pk = contrib_lang.contribution_pk
-        lang_name = contrib_lang.custom_language_name \
-            .replace('▒', '') \
-            .replace('█', '') \
-            .strip()
-        if lang_id not in language_names:
-            language_names[lang_id] = []
-        language_names[lang_id].append((contrib_pk, lang_name))
+        name_encoder.record_value(
+            lang_id, contrib_pk, contrib_lang.custom_language_name)
+        source_encoder.record_value(
+            lang_id, contrib_pk, contrib_lang.source_comment)
 
     for language in db_languages.values():
         if (languoid := glottolog_languages.get(language.id)):
@@ -321,14 +320,9 @@ def prime_cache(args):
             language.longitude = languoid.longitude
             language.macroarea = languoid.macroareas[0].name if languoid.macroareas else ''
 
-        custom_names = '█'.join(
-            '{}▒{}'.format(contrib, name)
-            for contrib, name in language_names.get(language.id, ())
-            if name != language.name)
-        if custom_names:
-            language.custom_names = '█{}█'.format(custom_names)
-        else:
-            language.custom_names = None
+        language.source_comments = source_encoder.encode(language.id)
+        language.custom_names = name_encoder.encode(
+            language.id, language.name)
 
     DBSession.flush()
     print('... done')

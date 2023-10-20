@@ -22,7 +22,6 @@ from clld.db.models import (
     SentenceReference,
     Value,
     ValueSentence,
-    ValueSet,
     ValueSetReference,
 )
 from crossgram.models import (
@@ -33,8 +32,10 @@ from crossgram.models import (
     Example,
     LParameter,
     LCode,
+    LValueSet,
     CParameter,
     CCode,
+    CValue,
     UnitReference,
     UnitSentence,
     UnitValueReference,
@@ -217,6 +218,9 @@ class CLDFBenchSubmission:
             return new_id
 
         # TODO add glottocode, iso code, and wals code if available
+        # TODO: add support for source_comment
+        #  ^ complication: multiple contributions may add different source
+        #  comments!
         new_langs_with_ids = [
             (cldf_language['id'], Variety(
                 id=_new_language_id(cldf_language),
@@ -299,7 +303,8 @@ class CLDFBenchSubmission:
             ContributionLanguage(
                 language_pk=languages[cldf_language['id']].pk,
                 contribution_pk=contribution.pk,
-                custom_language_name=cldf_language['name'])
+                custom_language_name=cldf_language['name'],
+                source_comment=cldf_language.get('Source_comment'))
             for cldf_language in cldf_languages)
 
         DBSession.add_all(
@@ -327,7 +332,8 @@ class CLDFBenchSubmission:
                 name=cldf_construction['name'],
                 description=cldf_construction['description'],
                 language_pk=languages[cldf_construction['languageReference']].pk,
-                contribution_pk=contribution.pk)
+                contribution_pk=contribution.pk,
+                source_comment=cldf_construction.get('Source_comment'))
             for cldf_construction in cldf_constructions}
         DBSession.add_all(constructions.values())
 
@@ -382,7 +388,8 @@ class CLDFBenchSubmission:
                     (s or '') for s in cldf_example['gloss']),
                 comment=cldf_example['comment'],
                 language_pk=languages[cldf_example['languageReference']].pk,
-                contribution_pk=contribution.pk)
+                contribution_pk=contribution.pk,
+                source_comment=cldf_example.get('Source_comment'))
             for ord, cldf_example in enumerate(cldf_examples, 1)}
         DBSession.add_all(examples.values())
 
@@ -421,23 +428,25 @@ class CLDFBenchSubmission:
             language_id = cldf_value['languageReference']
             parameter_id = cldf_value['parameterReference']
             if (language_id, parameter_id) not in lvaluesets:
-                lvaluesets[language_id, parameter_id] = ValueSet(
+                lvaluesets[language_id, parameter_id] = LValueSet(
                     id='{}-{}-{}'.format(
                         contribution.id, language_id, parameter_id),
                     language_pk=languages[language_id].pk,
                     parameter_pk=lparameters[parameter_id].pk,
-                    contribution_pk=contribution.pk)
+                    contribution_pk=contribution.pk,
+                    source_comment=cldf_value.get('Source_comment'))
         DBSession.add_all(lvaluesets.values())
 
         cvalues = {
-            cldf_value['id']: UnitValue(
+            cldf_value['id']: CValue(
                 id='{}-{}'.format(contribution.id, cldf_value['id']),
                 unit_pk=constructions[cldf_value['Construction_ID']].pk,
                 unitparameter_pk=cparameters[cldf_value['parameterReference']].pk,
                 unitdomainelement=(code := ccodes.get(cldf_value['codeReference'])),
                 name=code.name if code and code.name else cldf_value['value'],
                 contribution_pk=contribution.pk,
-                description=cldf_value.get('comment'))
+                description=cldf_value.get('comment'),
+                source_comment=cldf_value.get('Source_comment'))
             for cldf_value in cldf_cvalues}
         DBSession.add_all(cvalues.values())
 

@@ -22,6 +22,7 @@ from clld.db.models.common import (
     Language,
     Parameter,
     DomainElement,
+    ValueSet,
     Sentence,
     Source,
     Unit,
@@ -41,6 +42,7 @@ class Variety(CustomModelMixin, Language, HasFamilyMixin):
     glottolog_id = Column(Unicode)
     example_count = Column(Integer)
     custom_names = Column(Unicode)
+    source_comments = Column(Unicode)
 
 
 @implementer(interfaces.IContribution)
@@ -81,10 +83,11 @@ class ContributionLanguage(Base):
     __table_args__ = (UniqueConstraint('language_pk', 'contribution_pk'),)
 
     contribution_pk = Column(Integer, ForeignKey('contribution.pk'))
-    language_pk = Column(Integer, ForeignKey('language.pk'))
-    custom_language_name = Column(Unicode)
     contribution = relationship(Contribution, backref='language_assocs')
+    language_pk = Column(Integer, ForeignKey('language.pk'))
     language = relationship(Language, backref='contribution_assocs')
+    custom_language_name = Column(Unicode)
+    source_comment = Column(Unicode)
 
 
 @implementer(interfaces.IUnit)
@@ -92,6 +95,7 @@ class Construction(CustomModelMixin, Unit):
     pk = Column(Integer, ForeignKey('unit.pk'), primary_key=True)
     contribution_pk = Column(Integer, ForeignKey('contribution.pk'))
     contribution = relationship(CrossgramData, backref='constructions')
+    source_comment = Column(Unicode)
 
 
 @implementer(interfaces.IUnitParameter)
@@ -108,6 +112,12 @@ class CCode(CustomModelMixin, UnitDomainElement):
     language_count = Column(Integer)
 
 
+@implementer(interfaces.IUnitValue)
+class CValue(CustomModelMixin, UnitValue):
+    pk = Column(Integer, ForeignKey('unitvalue.pk'), primary_key=True)
+    source_comment = Column(Unicode)
+
+
 @implementer(interfaces.IParameter)
 class LParameter(CustomModelMixin, Parameter):
     pk = Column(Integer, ForeignKey('parameter.pk'), primary_key=True)
@@ -122,12 +132,19 @@ class LCode(CustomModelMixin, DomainElement):
     language_count = Column(Integer)
 
 
+@implementer(interfaces.IValueSet)
+class LValueSet(CustomModelMixin, ValueSet):
+    pk = Column(Integer, ForeignKey('valueset.pk'), primary_key=True)
+    source_comment = Column(Unicode)
+
+
 @implementer(interfaces.ISentence)
 class Example(CustomModelMixin, Sentence):
     pk = Column(Integer, ForeignKey('sentence.pk'), primary_key=True)
     number = Column(Integer)
     contribution_pk = Column(Integer, ForeignKey('contribution.pk'))
     contribution = relationship(CrossgramData, backref='examples')
+    source_comment = Column(Unicode)
 
 
 class LanguageReference(Base, HasSourceNotNullMixin):

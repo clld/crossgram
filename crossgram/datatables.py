@@ -25,6 +25,7 @@ from clld.web.util.helpers import (
 from clld.web.util.htmllib import HTML
 
 from crossgram import models
+from crossgram.lib.horrible_denormaliser import BlockDecoder
 
 
 class NumberCol(Col):
@@ -45,36 +46,35 @@ class DateCol(Col):
 class CustomLangNameCol(Col):
 
     def __init__(self, dt, name, contribution_pk, *args, **kwargs):
-        self._contrib_pk = contribution_pk
-        self._name_regex = re.compile('█{}▒([^█]*)█'.format(self._contrib_pk))
-        self._contrib_pattern = '%█{}▒%'.format(self._contrib_pk)
+        self._contribution_pk = contribution_pk
+        self._decoder = BlockDecoder(contribution_pk)
         super().__init__(dt, name, *args, **kwargs)
 
     def order(self):
         return case(
-            (models.Variety.custom_names.like(self._contrib_pattern),
+            (models.Variety.custom_names.like(self._decoder.sql_has_contrib),
              func.substring(models.Variety.custom_names,
-                            r'█{}▒([^█]*)█'.format(self._contrib_pk))),
+                            self._decoder.regex_get_value)),
             else_=models.Variety.name)
 
-    def search(self, qs):
-        name_pattern = r'.*█{}▒[^█]*{}[^█]*█.*'.format(
-            self._contrib_pk,
-            re.escape(qs))
-        return case(
-            (models.Variety.custom_names.like(self._contrib_pattern),
-             models.Variety.custom_names.op('~*')(name_pattern)),
-            else_=icontains(models.Variety.name, qs))
+    def search(self, query_string):
+        if self.contribution_pk:
+            return case(
+                (models.Variety.custom_names.like(self._decoder.sql_has_contrib),
+                 models.Variety.custom_names.op('~*')(
+                     self._decoder.regex_search_value(query_string))),
+                else_=icontains(models.Variety.name, query_string))
+        else:
+            return icontains(models.Variety.name, query_string)
 
     def format(self, item):
         obj = self.get_obj(item)
         if not obj:
             return ''
-        match = self._name_regex.search(obj.custom_names or '')
-        if match:
-            label = match.group(1)
-        else:
-            label = obj.name or str(obj)
+        label = (
+            self._decoder.extract_value(obj.custom_names)
+            or obj.name
+            or str(obj))
         return link(self.dt.req, obj, label=label)
 
 
@@ -142,7 +142,10 @@ class RefsCol(Col):
 
     def format(self, item):
         vs = self.get_obj(item)
-        return linked_references(self.dt.req, vs)
+        return (
+            linked_references(self.dt.req, vs)
+            or getattr(vs, 'source_comment', None)
+            or '')
 
 
 def _generate_separators(iterable):
@@ -191,21 +194,31 @@ class FilteredLanguageSourcesCol(Col):
 
     __kw__ = dict(bSearchable=False, bSortable=False)
 
-    def __init__(self, *args, contribution=None, **kwargs):
+    def __init__(self, *args, contribution_pk=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.contribution = contribution
+        self._contribution_pk = contribution_pk
+        self._decoder = BlockDecoder(contribution_pk)
 
     def in_contribution(self, source):
         return (
-            self.contribution is None
-            or source.contribution == self.contribution)
+            self._contribution_pk is None
+            or source.contribution_pk == self._contribution_pk)
 
     def format(self, item):
         language = self.get_obj(item)
-        return semicolon_separated_span(
-            format_source_reference(self.dt.req, ref)
+        linked_refs = [
+            ref
             for ref in language.references
-            if ref.source and self.in_contribution(ref.source))
+            if ref.source and self.in_contribution(ref.source)]
+        if linked_refs:
+            return semicolon_separated_span(
+                format_source_reference(self.dt.req, ref)
+                for ref in linked_refs)
+        elif self._contribution_pk:
+            return self._decoder.extract_value(language.source_comments)
+        else:
+            return '; '.join(
+                self._decoder.iter_values(language.source_comments))
 
 
 class ExamplesCol(Col):
@@ -307,8 +320,9 @@ class Languages(datatables.Languages):
             'glottocode_col',
             model_col=models.Variety.glottolog_id,
             sTitle='Glottocode')
+        contribution_pk = self.crossgramdata.pk if self.crossgramdata else None
         source = FilteredLanguageSourcesCol(
-            self, 'source', contribution=self.crossgramdata)
+            self, 'source', contribution_pk=contribution_pk)
         family = FamilyCol(self, 'family', models.Variety)
         linktomap = LinkToMapCol(self, 'm')
         examples = ExamplesCol(self, 'examples')
