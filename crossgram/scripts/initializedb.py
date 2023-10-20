@@ -1,22 +1,18 @@
-from __future__ import unicode_literals
-
 import pathlib
 import re
-
 from datetime import date
 
 import cldfcatalog
+import git
+import sqlalchemy
 from clld.cliutil import Data
 from clld.db.meta import DBSession
 from clld.db.models import common
+from clld_glottologfamily_plugin.util import load_families
 from clldutils import jsonlib
 from clldutils.misc import slug
-from clld_glottologfamily_plugin.util import load_families
-from pyglottolog import Glottolog
-
-import git
 from markdown import markdown
-import sqlalchemy
+from pyglottolog import Glottolog
 
 import crossgram
 from crossgram import models
@@ -28,7 +24,7 @@ from crossgram.lib.horrible_denormaliser import BlockEncoder
 def download_data(sid, contrib_md, cache_dir):
     if contrib_md.get('doi'):
         doi = contrib_md['doi']
-        path = cache_dir / '{}-{}'.format(sid, slug(doi))
+        path = cache_dir / f'{sid}-{slug(doi)}'
         if not path.exists():
             print(' * downloading dataset from Zenodo; doi:', doi)
             download_from_doi(doi, path)
@@ -40,7 +36,7 @@ def download_data(sid, contrib_md, cache_dir):
         checkout = contrib_md.get('checkout')
         if checkout:
             # specific commit/tag/branch
-            path = cache_dir / '{}-{}'.format(sid, slug(checkout))
+            path = cache_dir / f'{sid}-{slug(checkout)}'
             if not path.exists():
                 print(' * cloning', repo, 'into', path, '...')
                 git.Git().clone(repo, path)

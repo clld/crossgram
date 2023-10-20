@@ -1,28 +1,23 @@
-import re
-
-from sqlalchemy import func, select
-from sqlalchemy.orm import joinedload
-from sqlalchemy.sql.expression import case
-
 from clld.db.meta import DBSession
 from clld.db.models import common
 from clld.db.util import get_distinct_values, icontains
-
 from clld.web import datatables
 from clld.web.datatables.base import (
     Col, DataTable, DetailsRowLinkCol, LinkCol, LinkToMapCol,
 )
-from clld.web.datatables.contribution import ContributorsCol, CitationCol
+from clld.web.datatables.contribution import ContributorsCol
 from clld.web.datatables.contributor import NameCol, ContributionsCol, AddressCol
 from clld.web.datatables.sentence import TsvCol
 from clld.web.datatables.unitvalue import UnitValueNameCol
 from clld.web.datatables.value import ValueNameCol, ValueSetCol
-from clld_glottologfamily_plugin.datatables import FamilyCol
-from clld_glottologfamily_plugin.models import Family
 from clld.web.util.helpers import (
     link, external_link, gbs_link, linked_references,
 )
 from clld.web.util.htmllib import HTML
+from clld_glottologfamily_plugin.datatables import FamilyCol
+from sqlalchemy import func, select
+from sqlalchemy.orm import joinedload
+from sqlalchemy.sql.expression import case
 
 from crossgram import models
 from crossgram.lib.horrible_denormaliser import BlockDecoder

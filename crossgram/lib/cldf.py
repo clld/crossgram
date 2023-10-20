@@ -1,9 +1,11 @@
-from collections import defaultdict, namedtuple, OrderedDict
-from itertools import chain, cycle
 import re
 import sys
+from collections import namedtuple, OrderedDict
+from itertools import chain, cycle
 
-from clld.cliutil import bibtex2source, Data
+import clld.db.models as common
+from clld.cliutil import bibtex2source
+from clld.db.meta import DBSession
 from clld.lib import bibtex
 from clld.web.icon import ORDERED_ICONS
 from clldutils import jsonlib
@@ -11,37 +13,8 @@ from clldutils.misc import slug
 from nameparser import HumanName
 from pycldf import iter_datasets
 
-from clld.db.meta import DBSession
-from clld.db.models import (
-    ContributionContributor,
-    Contributor,
-    LanguageSource,
-    DomainElement,
-    UnitDomainElement,
-    UnitValue,
-    SentenceReference,
-    Value,
-    ValueSentence,
-    ValueSetReference,
-)
-from crossgram.models import (
-    Variety,
-    LanguageReference,
-    Construction,
-    ContributionLanguage,
-    Example,
-    LParameter,
-    LCode,
-    LValueSet,
-    CParameter,
-    CCode,
-    CValue,
-    UnitReference,
-    UnitSentence,
-    UnitValueReference,
-    UnitValueSentence,
-    CrossgramDataSource,
-)
+from crossgram import models
+
 
 MARTINS_FAVOURITE_ICONS = [
     'c0000dd',
@@ -77,7 +50,7 @@ def parse_author(author_spec):
     if not isinstance(author_spec, dict):
         author_spec = {'name': author_spec}
     parsed_name = HumanName(author_spec.get('name', ''))
-    author_id = slug('{}{}'.format(parsed_name.last, parsed_name.first))
+    author_id = slug(f'{parsed_name.last}{parsed_name.first}')
     return author_id, author_spec, parsed_name
 
 
@@ -191,7 +164,7 @@ class CLDFBenchSubmission:
                 lang = all_languages[id_]
                 existing_langs[slug(lang.name)] = lang
                 num += 1
-                id_ = '{}-{}'.format(glottocode, num)
+                id_ = f'{glottocode}-{num}'
 
             for name, old_id in by_name.items():
                 if not existing_langs:
@@ -213,7 +186,7 @@ class CLDFBenchSubmission:
             new_id = id_candidate
             while new_id in all_languages or new_id in new_ids:
                 number += 1
-                new_id = '{}-{}'.format(id_candidate, number)
+                new_id = f'{id_candidate}-{number}'
             new_ids.add(new_id)
             return new_id
 
@@ -222,7 +195,7 @@ class CLDFBenchSubmission:
         #  ^ complication: multiple contributions may add different source
         #  comments!
         new_langs_with_ids = [
-            (cldf_language['id'], Variety(
+            (cldf_language['id'], models.Variety(
                 id=_new_language_id(cldf_language),
                 name=cldf_language['name'],
                 latitude=cldf_language['latitude'],
@@ -242,7 +215,7 @@ class CLDFBenchSubmission:
             for value in cldf_cvalues
             if (parameter_id := value.get('parameterReference'))}
         lparameters = {
-            cldf_parameter['id']: LParameter(
+            cldf_parameter['id']: models.LParameter(
                 id='{}-{}'.format(contribution.id, cldf_parameter['id']),
                 contribution_pk=contribution.pk,
                 name=cldf_parameter['name'],
@@ -252,7 +225,7 @@ class CLDFBenchSubmission:
             # consider parameters without values lparameters by default.
             or cldf_parameter['id'] not in cparameter_ids}
         cparameters = {
-            cldf_parameter['id']: CParameter(
+            cldf_parameter['id']: models.CParameter(
                 id='{}-{}'.format(contribution.id, cldf_parameter['id']),
                 contribution_pk=contribution.pk,
                 name=cldf_parameter['name'],
@@ -268,7 +241,7 @@ class CLDFBenchSubmission:
             for author_id, _, _ in parsed_authors
             if author_id in all_contributors}
         new_contributors = [
-            Contributor(
+            common.Contributor(
                 id=author_id,
                 name=parsed_name.full_name,
                 address=author_spec.get('affiliation'),
@@ -283,14 +256,14 @@ class CLDFBenchSubmission:
 
         if self.sources:
             sources = [
-                bibtex2source(bibrecord, CrossgramDataSource)
+                bibtex2source(bibrecord, models.CrossgramDataSource)
                 for bibrecord in self.sources.records]
             sources = {
                 bibrecord.id: bibrecord
                 for bibrecord in sources}
             for source in sources.values():
                 # give sources unique ids
-                source.id = '{}-{}'.format(contribution.id, source.id)
+                source.id = f'{contribution.id}-{source.id}'
                 # add information bibtex2source doesn't know about
                 source.contribution_pk = contribution.pk
             DBSession.add_all(sources.values())
@@ -300,7 +273,7 @@ class CLDFBenchSubmission:
         DBSession.flush()
 
         DBSession.add_all(
-            ContributionLanguage(
+            models.ContributionLanguage(
                 language_pk=languages[cldf_language['id']].pk,
                 contribution_pk=contribution.pk,
                 custom_language_name=cldf_language['name'],
@@ -308,7 +281,7 @@ class CLDFBenchSubmission:
             for cldf_language in cldf_languages)
 
         DBSession.add_all(
-            ContributionContributor(
+            common.ContributionContributor(
                 ord=ord,
                 primary=spec.get('primary', True),
                 contribution_pk=contribution.pk,
@@ -316,7 +289,7 @@ class CLDFBenchSubmission:
             for ord, (author_id, spec, _) in enumerate(parsed_authors, 1))
 
         DBSession.add_all(
-            LanguageReference(
+            models.LanguageReference(
                 key=st.bibkey,
                 description=st.pages,
                 language_pk=languages[cldf_language['id']].pk,
@@ -327,7 +300,7 @@ class CLDFBenchSubmission:
             and st.source_pk is not None)
 
         constructions = {
-            cldf_construction['id']: Construction(
+            cldf_construction['id']: models.Construction(
                 id='{}-{}'.format(contribution.id, cldf_construction['id']),
                 name=cldf_construction['name'],
                 description=cldf_construction['description'],
@@ -353,7 +326,7 @@ class CLDFBenchSubmission:
                 code_icons[cldf_code['id']] = code_icon
 
         lcodes = {
-            cldf_code['id']: LCode(
+            cldf_code['id']: models.LCode(
                 id='{}-{}'.format(contribution.id, cldf_code['id']),
                 parameter_pk=lparameter.pk,
                 name=cldf_code['name'],
@@ -363,7 +336,7 @@ class CLDFBenchSubmission:
             for cldf_code in param_codes
             if (lparameter := lparameters.get(parameter_id))}
         ccodes = {
-            cldf_code['id']: CCode(
+            cldf_code['id']: models.CCode(
                 id='{}-{}'.format(contribution.id, cldf_code['id']),
                 unitparameter_pk=cparameter.pk,
                 name=cldf_code['name'],
@@ -377,8 +350,8 @@ class CLDFBenchSubmission:
         DBSession.add_all(ccodes.values())
 
         examples = {
-            cldf_example['id']: Example(
-                id='{}-{}'.format(contribution.number or contribution.id, ord),
+            cldf_example['id']: models.Example(
+                id=f'{contribution.number or contribution.id}-{ord}',
                 number=ord,
                 name=cldf_example['primaryText'],
                 description=cldf_example['translatedText'],
@@ -396,7 +369,7 @@ class CLDFBenchSubmission:
         DBSession.flush()
 
         DBSession.add_all(
-            SentenceReference(
+            common.SentenceReference(
                 key=st.bibkey,
                 description=st.pages,
                 sentence_pk=examples[cldf_example['id']].pk,
@@ -406,7 +379,7 @@ class CLDFBenchSubmission:
             if (st := parse_source(sources, source_string))
             and st.source_pk is not None)
         DBSession.add_all(
-            UnitReference(
+            models.UnitReference(
                 key=st.bibkey,
                 description=st.pages,
                 unit_pk=constructions[cldf_construction['id']].pk,
@@ -417,7 +390,7 @@ class CLDFBenchSubmission:
             and st.source_pk is not None)
 
         DBSession.add_all(
-            UnitSentence(
+            models.UnitSentence(
                 unit_pk=constructions[cldf_construction['id']].pk,
                 sentence_pk=examples[example_id].pk)
             for cldf_construction in cldf_constructions
@@ -428,9 +401,8 @@ class CLDFBenchSubmission:
             language_id = cldf_value['languageReference']
             parameter_id = cldf_value['parameterReference']
             if (language_id, parameter_id) not in lvaluesets:
-                lvaluesets[language_id, parameter_id] = LValueSet(
-                    id='{}-{}-{}'.format(
-                        contribution.id, language_id, parameter_id),
+                lvaluesets[language_id, parameter_id] = models.LValueSet(
+                    id=f'{contribution.id}-{language_id}-{parameter_id}',
                     language_pk=languages[language_id].pk,
                     parameter_pk=lparameters[parameter_id].pk,
                     contribution_pk=contribution.pk,
@@ -438,7 +410,7 @@ class CLDFBenchSubmission:
         DBSession.add_all(lvaluesets.values())
 
         cvalues = {
-            cldf_value['id']: CValue(
+            cldf_value['id']: models.CValue(
                 id='{}-{}'.format(contribution.id, cldf_value['id']),
                 unit_pk=constructions[cldf_value['Construction_ID']].pk,
                 unitparameter_pk=cparameters[cldf_value['parameterReference']].pk,
@@ -465,7 +437,7 @@ class CLDFBenchSubmission:
                         valueset_refs[valueset.pk] = set()
                     valueset_refs[valueset.pk].add(st)
         DBSession.add_all(
-            ValueSetReference(
+            common.ValueSetReference(
                 key=st.bibkey,
                 description=st.pages or None,
                 valueset_pk=valueset_pk,
@@ -474,14 +446,14 @@ class CLDFBenchSubmission:
             for st in sorted(st_set))
 
         DBSession.add_all(
-            UnitValueSentence(
+            models.UnitValueSentence(
                 unitvalue=cvalues[cldf_value['id']],
                 sentence=examples[example_id])
             for cldf_value in cldf_cvalues
             for example_id in sorted(set(cldf_value.get('exampleReference') or ())))
 
         DBSession.add_all(
-            UnitValueReference(
+            models.UnitValueReference(
                 key=st.bibkey,
                 description=st.pages,
                 unitvalue_pk=cvalues[cldf_value['id']].pk,
@@ -508,7 +480,7 @@ class CLDFBenchSubmission:
                 cldf_value['languageReference'],
                 cldf_value['parameterReference']]
             code = lcodes.get(cldf_value['codeReference'])
-            lvalues[cldf_value['id']] = Value(
+            lvalues[cldf_value['id']] = common.Value(
                 id='{}-{}'.format(contribution.id, cldf_value['id']),
                 valueset_pk=valueset.pk,
                 name=code.name if code and code.name else cldf_value['value'],
@@ -519,7 +491,7 @@ class CLDFBenchSubmission:
         DBSession.flush()
 
         DBSession.add_all(
-            ValueSentence(
+            common.ValueSentence(
                 value_pk=lvalues[cldf_value['id']].pk,
                 sentence_pk=examples[example_id].pk)
             for cldf_value in cldf_lvalues
@@ -544,7 +516,7 @@ class CLDFBenchSubmission:
                 for dataset in iter_datasets(path / 'cldf')
                 if dataset.module == 'StructureDataset')
         except StopIteration:
-            raise ValueError('No cldf metadata file found in {}'.format(path))
+            raise ValueError(f'No cldf metadata file found in {path}')
 
         bib_path = path / 'cldf' / 'sources.bib'
         sources = bibtex.Database.from_file(bib_path) if bib_path.exists() else None
