@@ -1,5 +1,3 @@
-import re
-
 """\
 Okay, so, you might be wondering what's going on here...
 
@@ -37,6 +35,8 @@ And on the other end the data table contains `BlockDecoder` objects, which
 parse the information back out of the string (or provide regex's/SQL LIKE
 queries that the data tables can chuck at sqlalchemy).
 """
+
+import re
 
 
 class BlockEncoder:

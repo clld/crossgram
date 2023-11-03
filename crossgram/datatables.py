@@ -124,7 +124,7 @@ class MoreIntuitiveValueNameCol(ValueNameCol):
     """
     def search(self, qs):
         if self.dt.parameter and self.dt.parameter.domain:
-            return common.DomainElement.name.__eq__(qs)
+            return common.DomainElement.name == qs
         else:
             return icontains(common.Value.name, qs)
 
@@ -133,13 +133,13 @@ class RefsCol(Col):
 
     """Column listing linked sources."""
 
-    __kw__ = dict(bSearchable=False, bSortable=False)
+    __kw__ = {'bSearchable': False, 'bSortable': False}
 
     def format(self, item):
-        vs = self.get_obj(item)
+        valueset = self.get_obj(item)
         return (
-            linked_references(self.dt.req, vs)
-            or getattr(vs, 'source_comment', None)
+            linked_references(self.dt.req, valueset)
+            or getattr(valueset, 'source_comment', None)
             or '')
 
 
@@ -161,7 +161,7 @@ class SourceLanguageCol(Col):
 
     """Column listing linked languages of a source."""
 
-    __kw__ = dict(bSearchable=False, bSortable=False)
+    __kw__ = {'bSearchable': False, 'bSortable': False}
 
     def format(self, item):
         source = self.get_obj(item)
@@ -187,7 +187,7 @@ class FilteredLanguageSourcesCol(Col):
 
     """Column showing sources for a language, filtered by contribution."""
 
-    __kw__ = dict(bSearchable=False, bSortable=False)
+    __kw__ = {'bSearchable': False, 'bSortable': False}
 
     def __init__(self, *args, contribution_pk=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -687,7 +687,7 @@ class Sources(datatables.Sources):
         if self.language:
             query = query\
                 .join(models.CrossgramDataSource.languages)\
-                .filter(common.LanguageReference.language_pk == self.language.pk)
+                .filter(models.LanguageReference.language_pk == self.language.pk)
         else:
             query = query.options(
                 joinedload(models.CrossgramDataSource.languagereferences)

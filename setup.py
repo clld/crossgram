@@ -19,6 +19,8 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
+        # shut up pip
+        'sqlalchemy<2.0',
         'cldfcatalog',
         'clld>=10',
         'clldmpg>=4.2',

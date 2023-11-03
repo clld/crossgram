@@ -288,14 +288,14 @@ class CLDFBenchSubmission:
 
         DBSession.add_all(
             models.LanguageReference(
-                key=st.bibkey,
-                description=st.pages,
+                key=source_tuple.bibkey,
+                description=source_tuple.pages,
                 language_pk=languages[cldf_language['id']].pk,
-                source_pk=st.source_pk)
+                source_pk=source_tuple.source_pk)
             for cldf_language in cldf_languages
             for source_string in sorted(set(cldf_language.get('source') or ()))
-            if (st := parse_source(sources, source_string))
-            and st.source_pk is not None)
+            if (source_tuple := parse_source(sources, source_string))
+            and source_tuple.source_pk is not None)
 
         constructions = {
             cldf_construction['id']: models.Construction(
@@ -319,7 +319,10 @@ class CLDFBenchSubmission:
                         code_icon = custom_icon
                     else:
                         msg = "{}:Param {}:Code {}: invalid icon '{}'".format(
-                            contribution.id, param_id, old_id, custom_icon)
+                            contribution.id,
+                            param_id,
+                            cldf_code['id'],
+                            custom_icon)
                         print(msg, file=sys.stderr)
                 code_icons[cldf_code['id']] = code_icon
 
@@ -329,7 +332,7 @@ class CLDFBenchSubmission:
                 parameter_pk=lparameter.pk,
                 name=cldf_code['name'],
                 description=cldf_code['description'],
-                jsondata=dict(icon=code_icons[cldf_code['id']]))
+                jsondata={'icon': code_icons[cldf_code['id']]})
             for parameter_id, param_codes in cldf_codes.items()
             for cldf_code in param_codes
             if (lparameter := lparameters.get(parameter_id))}
@@ -339,7 +342,7 @@ class CLDFBenchSubmission:
                 unitparameter_pk=cparameter.pk,
                 name=cldf_code['name'],
                 description=cldf_code['description'],
-                jsondata=dict(icon=code_icons[cldf_code['id']]))
+                jsondata={'icon': code_icons[cldf_code['id']]})
             for parameter_id, param_codes in cldf_codes.items()
             for cldf_code in param_codes
             if (cparameter := cparameters.get(parameter_id))}
@@ -368,24 +371,24 @@ class CLDFBenchSubmission:
 
         DBSession.add_all(
             common.SentenceReference(
-                key=st.bibkey,
-                description=st.pages,
+                key=source_tuple.bibkey,
+                description=source_tuple.pages,
                 sentence_pk=examples[cldf_example['id']].pk,
-                source_pk=st.source_pk)
+                source_pk=source_tuple.source_pk)
             for cldf_example in cldf_examples
             for source_string in sorted(set(cldf_example.get('source') or ()))
-            if (st := parse_source(sources, source_string))
-            and st.source_pk is not None)
+            if (source_tuple := parse_source(sources, source_string))
+            and source_tuple.source_pk is not None)
         DBSession.add_all(
             models.UnitReference(
-                key=st.bibkey,
-                description=st.pages,
+                key=source_tuple.bibkey,
+                description=source_tuple.pages,
                 unit_pk=constructions[cldf_construction['id']].pk,
-                source_pk=st.source_pk)
+                source_pk=source_tuple.source_pk)
             for cldf_construction in cldf_constructions
             for source_string in sorted(set(cldf_construction.get('source') or ()))
-            if (st := parse_source(sources, source_string))
-            and st.source_pk is not None)
+            if (source_tuple := parse_source(sources, source_string))
+            and source_tuple.source_pk is not None)
 
         DBSession.add_all(
             models.UnitSentence(
@@ -428,20 +431,20 @@ class CLDFBenchSubmission:
                 cldf_value['languageReference'],
                 cldf_value['parameterReference']]
             for source_string in sorted(set(cldf_value.get('source') or ())):
-                st = parse_source(sources, source_string)
-                if st and st.source_pk is not None:
+                source_tuple = parse_source(sources, source_string)
+                if source_tuple and source_tuple.source_pk is not None:
                     # collect sources for all values in the same value set
                     if valueset.pk not in valueset_refs:
                         valueset_refs[valueset.pk] = set()
-                    valueset_refs[valueset.pk].add(st)
+                    valueset_refs[valueset.pk].add(source_tuple)
         DBSession.add_all(
             common.ValueSetReference(
-                key=st.bibkey,
-                description=st.pages or None,
+                key=source_tuple.bibkey,
+                description=source_tuple.pages or None,
                 valueset_pk=valueset_pk,
-                source_pk=st.source_pk)
+                source_pk=source_tuple.source_pk)
             for valueset_pk, st_set in valueset_refs.items()
-            for st in sorted(st_set))
+            for source_tuple in sorted(st_set))
 
         DBSession.add_all(
             models.UnitValueSentence(
@@ -452,14 +455,14 @@ class CLDFBenchSubmission:
 
         DBSession.add_all(
             models.UnitValueReference(
-                key=st.bibkey,
-                description=st.pages,
+                key=source_tuple.bibkey,
+                description=source_tuple.pages,
                 unitvalue_pk=cvalues[cldf_value['id']].pk,
-                source_pk=st.source_pk)
+                source_pk=source_tuple.source_pk)
             for cldf_value in cldf_cvalues
             for source_string in sorted(set(cldf_value.get('source') or ()))
-            if (st := parse_source(sources, source_string))
-            and st.source_pk is not None)
+            if (source_tuple := parse_source(sources, source_string))
+            and source_tuple.source_pk is not None)
 
         unique_constraint = set()
         lvalues = {}
@@ -520,7 +523,7 @@ class CLDFBenchSubmission:
         sources = bibtex.Database.from_file(bib_path) if bib_path.exists() else None
 
         md_path = path / 'metadata.json'
-        md = jsonlib.load(md_path) if md_path.exists() else {}
+        metadata = jsonlib.load(md_path) if md_path.exists() else {}
 
         # XXX maybe also allow README.txt?
         readme_path = path / 'README.md'
@@ -532,4 +535,5 @@ class CLDFBenchSubmission:
 
         authors = contrib_md.get('authors') or ()
 
-        return cls(cldf_dataset, sources, authors, md.get('title'), readme)
+        return cls(
+            cldf_dataset, sources, authors, metadata.get('title'), readme)
