@@ -255,12 +255,10 @@ class CLDFBenchSubmission:
             for contributor in new_contributors)
 
         if self.sources:
-            sources = [
-                bibtex2source(bibrecord, models.CrossgramDataSource)
-                for bibrecord in self.sources.records]
             sources = {
-                bibrecord.id: bibrecord
-                for bibrecord in sources}
+                bibrecord.id: bibtex2source(
+                    bibrecord, models.CrossgramDataSource)
+                for bibrecord in self.sources.records}
             for source in sources.values():
                 # give sources unique ids
                 source.id = f'{contribution.id}-{source.id}'
