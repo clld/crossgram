@@ -53,7 +53,7 @@ class CustomLangNameCol(Col):
             else_=models.Variety.name)
 
     def search(self, query_string):
-        if self.contribution_pk:
+        if self._contribution_pk:
             return case(
                 (models.Variety.custom_names.like(self._decoder.sql_has_contrib),
                  models.Variety.custom_names.op('~*')(
