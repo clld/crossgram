@@ -7,6 +7,11 @@
 
 <p><em>From ${_('Contribution')}: ${h.link(request, ctx.contribution)}</em></p>
 
+<p>
+  <em>Language:</em>
+  ${h.link(request, ctx.language)}
+</p>
+
 % if ctx.description:
 <p>
     ${ctx.description}
