@@ -33,3 +33,15 @@ div.intro h5 {
 .leaflet-popup-content {
     margin: 1ex 2.2ex 1ex 2.2ex;
 }
+
+.example-list td {
+    vertical-align: baseline;
+}
+
+td.example-number {
+    min-width: 6ex;
+}
+
+.example-list tr + tr {
+    margin-bottom: 1ex;
+}

@@ -31,19 +31,22 @@
 
 % if ctx.sentence_assocs:
 <p><strong>${_('Sentences')}</strong></p>
-<ol>
-%   for a in ctx.sentence_assocs:
-    <li>
-        ${h.rendered_sentence(a.sentence)}
-        % if a.sentence.references:
-        <p><em>See</em> ${h.linked_references(request, a.sentence)}</p>
-        % endif
-        % if a.sentence.comment:
-        <dl><dt>Comment:</dt><dd>${a.sentence.comment}</dd></dl>
-        % endif
-    </li>
-%   endfor
-</ol>
+<table class="example-list">
+%  for a in ctx.sentence_assocs:
+   <tr>
+     <td class="example-number">${h.link(request, a.sentence, label='({})'.format(a.sentence.number))}</td>
+     <td>
+       ${h.rendered_sentence(a.sentence)}
+       % if a.sentence.references:
+         <p><em>See</em> ${h.linked_references(request, a.sentence)}</p>
+       % endif
+       % if a.sentence.comment:
+         <dl><dt>Comment:</dt><dd>${a.sentence.comment}</dd></dl>
+       % endif
+     </td>
+   </tr>
+%  endfor
+</table>
 % endif
 
 ${request.get_datatable('unitvalues', h.models.UnitValue, unit=ctx).render()}
