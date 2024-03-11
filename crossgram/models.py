@@ -15,6 +15,7 @@ from clld import interfaces
 from clld.db.meta import Base, CustomModelMixin
 from clld.db.models.common import (
     Contribution,
+    IdNameDescriptionMixin,
     Language,
     Parameter,
     DomainElement,
@@ -30,6 +31,8 @@ from clld.db.models.source import HasSourceNotNullMixin
 from clld.web.util.helpers import external_link
 from clld.web.util.htmllib import HTML
 from clld_glottologfamily_plugin.models import HasFamilyMixin
+
+from crossgram.interfaces import ITopic
 
 
 @implementer(interfaces.ILanguage)
@@ -149,6 +152,20 @@ class LanguageReference(Base, HasSourceNotNullMixin):
 
     language_pk = Column(Integer, ForeignKey('language.pk'), nullable=False)
     language = relationship(Language, innerjoin=True, backref='references')
+
+
+@implementer(ITopic)
+class Topic(Base, IdNameDescriptionMixin):
+    pk = Column(Integer, primary_key=True)
+    quotation = Column(Unicode)
+    comment = Column(Unicode)
+    gold_counterpart = Column(Unicode)
+    gold_url = Column(Unicode)
+    gold_comment = Column(Unicode)
+    isocat_counterpart = Column(Unicode)
+    isocat_url = Column(Unicode)
+    isocat_comment = Column(Unicode)
+    # TODO: maybe some denormalised counts (how many parameters do we have)
 
 
 class UnitReference(Base, HasSourceNotNullMixin):

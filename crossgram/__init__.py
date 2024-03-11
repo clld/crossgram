@@ -1,12 +1,15 @@
 from functools import partial
 
 from pyramid.config import Configurator
-from clld import interfaces
+# apparently the `from crossgram.interfaces import` clause below shadows this
+# import???
+from clld import interfaces as common_interfaces
 from clld.web.app import menu_item
 from clld_glottologfamily_plugin import util
 
 # we must make sure custom models are known at database initialization!
 from crossgram import models, md  # noqa: F401
+from crossgram.interfaces import ITopic
 
 
 _ = lambda s: s  # noqa: E731
@@ -18,6 +21,8 @@ _('Contribution')
 _('Contributions')
 _('Parameter')
 _('Parameters')
+_('Topic')
+_('Topics')
 _('Unit')
 _('Units')
 _('Unit Parameter')
@@ -26,16 +31,16 @@ _('Unit Parameters')
 
 class LanguageByFamilyMapMarker(util.LanguageByFamilyMapMarker):
     def get_icon(self, ctx, req):
-        if interfaces.IValueSet.providedBy(ctx):
+        if common_interfaces.IValueSet.providedBy(ctx):
             icons = [
                 v.domainelement.jsondata['icon']
                 for v in ctx.values
                 if v.domainelement]
             # FIXME this only shows the *first* value
             return icons[0] if len(icons) > 0 else None
-        elif interfaces.IValue.providedBy(ctx) and ctx.domainelement:
+        elif common_interfaces.IValue.providedBy(ctx) and ctx.domainelement:
             return ctx.domainelement.jsondata['icon']
-        elif interfaces.IDomainElement.providedBy(ctx):
+        elif common_interfaces.IDomainElement.providedBy(ctx):
             return ctx.jsondata['icon']
         else:
             return super().get_icon(ctx, req)
@@ -48,7 +53,9 @@ def main(global_config, **settings):
     config.include('clld.web.app')
     config.include('clld_glottologfamily_plugin')
     config.registry.registerUtility(
-        LanguageByFamilyMapMarker(), interfaces.IMapMarker)
+        LanguageByFamilyMapMarker(), common_interfaces.IMapMarker)
+
+    config.register_resource('topic', models.Topic, ITopic, with_index=True)
 
     config.register_menu(
         # ('dataset', partial(menu_item, 'dataset', label='Home')),
@@ -58,12 +65,16 @@ def main(global_config, **settings):
         ('units', partial(menu_item, 'units')),
         # ('unitparameters', partial(menu_item, 'unitparameters', label='C-Parameters')),
         ('sentences', partial(menu_item, 'sentences')),
+        ('topics', partial(menu_item, 'topics')),
         ('sources', partial(menu_item, 'sources')),
         ('contributors', partial(menu_item, 'contributors')),
     )
 
-    for if_ in [interfaces.IRepresentation, interfaces.IMetadata]:
+    for if_ in [common_interfaces.IRepresentation, common_interfaces.IMetadata]:
         config.register_adapter(
-            md.BibTex, interfaces.IContribution, if_, name=md.BibTex.mimetype)
+            md.BibTex,
+            common_interfaces.IContribution,
+            if_,
+            name=md.BibTex.mimetype)
 
     return config.make_wsgi_app()

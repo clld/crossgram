@@ -23,6 +23,8 @@ from crossgram import models
 from crossgram.lib.horrible_denormaliser import BlockDecoder
 
 
+# Columns
+
 class NumberCol(Col):
     __kw__ = {
         'input_size': 'mini',
@@ -244,6 +246,8 @@ class ExamplesCol(Col):
             link(self.dt.req, example, label=_label(example))
             for example in examples)
 
+
+# Datatables
 
 class CrossgramDatasets(DataTable):
 
@@ -724,6 +728,17 @@ class Sources(datatables.Sources):
             return [name, title, author, year, contrib, languages, details]
 
 
+class Topics(DataTable):
+    def col_defs(self):
+        return [
+            LinkCol(self, 'id'),
+            LinkCol(self, 'name'),
+            Col(self, 'description', sTitle='definition'),
+            Col(self, 'gold_counterpart'),
+            Col(self, 'isocat_counterpart'),
+        ]
+
+
 def includeme(config):
     config.register_datatable('contributions', CrossgramDatasets)
     config.register_datatable('contributors', ContributionContributors)
@@ -735,3 +750,4 @@ def includeme(config):
     config.register_datatable('units', Constructions)
     config.register_datatable('unitvalues', CValues)
     config.register_datatable('sources', Sources)
+    config.register_datatable('topics', Topics)

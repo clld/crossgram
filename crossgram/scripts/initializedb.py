@@ -11,6 +11,7 @@ from clld.db.models import common
 from clld_glottologfamily_plugin.util import load_families
 from clldutils import jsonlib
 from clldutils.misc import slug
+from csvw import dsv
 from markdown import markdown
 from pyglottolog import Glottolog
 
@@ -140,6 +141,27 @@ def main(args):
     internal_repo = pathlib.Path('../../crossgram/crossgram-internal')
     cache_dir = internal_repo / 'datasets'
     cache_dir.mkdir(exist_ok=True)
+
+    grammaticon_repo = pathlib.Path('../grammaticon-data/csvw')
+    csv_topics = (
+        {k: v for k, v in csv_topic.items() if v}
+        for csv_topic in dsv.iterrows(
+            grammaticon_repo / 'concepts.csv', dicts=True))
+    topics = {
+        topic['ID']: models.Topic(
+            id=topic['ID'],
+            name=topic['Name'],
+            description=topic.get('Description'),
+            comment=topic.get('Comment'),
+            quotation=topic.get('Quotation'),
+            gold_counterpart=topic.get('GOLD_Counterpart'),
+            gold_url=topic.get('GOLD_URL'),
+            gold_comment=topic.get('GOLD_Comment'),
+            isocat_counterpart=topic.get('ISOCAT_Counterpart'),
+            isocat_url=topic.get('ISOCAT_URL'),
+            isocat_comment=topic.get('ISOCAT_Comment'))
+        for topic in csv_topics}
+    DBSession.add_all(topics.values())
 
     if internal:
         submissions_path = internal_repo / 'submissions-internal'
