@@ -10,31 +10,24 @@
 % endif
 
 ## TODO: could be in a side panel
-% if ctx.gold_counterpart or ctx.isocat_counterpart:
+% if ctx.croft_counterpart or ctx.wikipedia_counterpart:
 <dl>
   % if ctx.gold_counterpart:
-  <dt>GOLD counter-part</dt>
+  <dt>Croft counter-part</dt>
   <dd>
-    % if ctx.gold_url:
-    ${h.external_link(ctx.gold_url, label=ctx.gold_counterpart)}
-    % else:
-    ${ctx.gold_counterpart}
-    % endif
+    ${ctx.croft_counterpart}
     % if ctx.gold_comment:
-    <br>${ctx.gold_comment}
+      <br>${ctx.croft_definition}
     % endif
   </dd>
   % endif
   % if ctx.isocat_counterpart:
-  <dt>ISOCAT counter-part</dt>
+  <dt>Wikipedia counter-part</dt>
   <dd>
-    % if ctx.isocat_url:
-    ${h.external_link(ctx.isocat_url, label=ctx.isocat_counterpart)}
+    % if ctx.wikipedia_url:
+    ${h.external_link(ctx.wikipedia_url, label=ctx.wikipedia_counterpart)}
     % else:
-    ${ctx.isocat_counterpart}
-    % endif
-    % if ctx.isocat_comment:
-    <br>${ctx.isocat_comment}
+    ${ctx.wikipedia_counterpart}
     % endif
   </dd>
   % endif

@@ -159,12 +159,11 @@ class Topic(Base, IdNameDescriptionMixin):
     pk = Column(Integer, primary_key=True)
     quotation = Column(Unicode)
     comment = Column(Unicode)
-    gold_counterpart = Column(Unicode)
-    gold_url = Column(Unicode)
-    gold_comment = Column(Unicode)
-    isocat_counterpart = Column(Unicode)
-    isocat_url = Column(Unicode)
-    isocat_comment = Column(Unicode)
+    grammar_code = Column(Unicode)
+    croft_counterpart = Column(Unicode)
+    croft_description = Column(Unicode)
+    wikipedia_counterpart = Column(Unicode)
+    wikipedia_url = Column(Unicode)
     # TODO: maybe some denormalised counts (how many parameters do we have)
 
 

@@ -734,8 +734,9 @@ class Topics(DataTable):
             LinkCol(self, 'id'),
             LinkCol(self, 'name'),
             Col(self, 'description', sTitle='definition'),
-            Col(self, 'gold_counterpart'),
-            Col(self, 'isocat_counterpart'),
+            Col(self, 'croft_counterpart'),
+            # TODO: link
+            Col(self, 'wikipedia_counterpart'),
         ]
 
 

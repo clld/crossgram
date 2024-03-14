@@ -154,12 +154,10 @@ def main(args):
             description=topic.get('Description'),
             comment=topic.get('Comment'),
             quotation=topic.get('Quotation'),
-            gold_counterpart=topic.get('GOLD_Counterpart'),
-            gold_url=topic.get('GOLD_URL'),
-            gold_comment=topic.get('GOLD_Comment'),
-            isocat_counterpart=topic.get('ISOCAT_Counterpart'),
-            isocat_url=topic.get('ISOCAT_URL'),
-            isocat_comment=topic.get('ISOCAT_Comment'))
+            croft_counterpart=topic.get('Croft_Counterpart'),
+            croft_description=topic.get('Croft_Description'),
+            wikipedia_counterpart=topic.get('Wikipedia_Counterpart'),
+            wikipedia_url=topic.get('Wikipedia_URL'))
         for topic in csv_topics}
     DBSession.add_all(topics.values())
 
