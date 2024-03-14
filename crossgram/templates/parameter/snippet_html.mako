@@ -20,7 +20,7 @@
         <tr>
             <% total += (de.language_count or 0) %>
             <td>${h.map_marker_img(request, de)}</td>
-            <td>${de.description or de.name}</td>
+            <td>${de.name}</td>
             <td class="right">${de.language_count or 0}</td>
         </tr>
         % endfor
