@@ -408,6 +408,7 @@ class CParameters(datatables.Unitparameters):
         return query
 
     def col_defs(self):
+        # TODO: list of linked topics
         name = LinkCol(self, 'name', sTitle='C-Parameter')
         desc = Col(self, 'description')
         langcount = CountCol(
@@ -522,6 +523,7 @@ class LParameters(datatables.Parameters):
         return query
 
     def col_defs(self):
+        # TODO: list of linked topics
         name = LinkCol(self, 'name', sTitle='L-Parameter')
         desc = Col(self, 'description')
         langcount = CountCol(
@@ -731,12 +733,14 @@ class Sources(datatables.Sources):
 class Topics(DataTable):
     def col_defs(self):
         return [
-            LinkCol(self, 'id'),
-            LinkCol(self, 'name'),
-            Col(self, 'description', sTitle='definition'),
+            LinkCol(self, 'name', sTitle='Topic'),
+            # TODO: link to grammaticon
+            Col(self, 'grammacode'),
+            Col(self, 'description'),
             Col(self, 'croft_counterpart'),
-            # TODO: link
+            # TODO: link to wikipedia if available
             Col(self, 'wikipedia_counterpart'),
+            # TODO: feature count
         ]
 
 

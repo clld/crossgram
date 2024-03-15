@@ -7,6 +7,8 @@
 
 <p><em>From ${_('Contribution')}: ${h.link(request, ctx.contribution)}</em></p>
 
+## TODO: list of linked topics
+
 % if ctx.description:
 <p>${ctx.description}</p>
 % endif

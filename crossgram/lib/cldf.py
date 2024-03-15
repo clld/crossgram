@@ -94,14 +94,16 @@ def read_table(cldf, table):
 
 
 def cldf_parameters_from_values(cldf_lvalues, cldf_cvalues):
-    cldf_parameters = {}
+    cldf_parameters = []
+    parameter_ids = set()
     for value in chain(cldf_lvalues, cldf_cvalues):
         parameter_id = value.get('parameterReference')
-        if parameter_id and parameter_id not in cldf_parameters:
-            cldf_parameters[parameter_id] = {
+        if parameter_id and parameter_id not in parameter_ids:
+            parameter_ids.add(parameter_id)
+            cldf_parameters.append({
                 'id': parameter_id,
                 'name': parameter_id,
-            }
+            })
     return cldf_parameters
 
 
@@ -139,7 +141,7 @@ def make_cparameters(cldf_parameters, cldf_cvalues, contribution):
             contribution_pk=contribution.pk,
             name=cldf_parameter['name'],
             description=cldf_parameter['description'])
-        for cldf_parameter in cldf_parameters.values()
+        for cldf_parameter in cldf_parameters
         if cldf_parameter['id'] in cparameter_ids}
 
 
@@ -156,7 +158,7 @@ def make_lparameters(
             contribution_pk=contribution.pk,
             name=cldf_parameter['name'],
             description=cldf_parameter['description'])
-        for cldf_parameter in cldf_parameters.values()
+        for cldf_parameter in cldf_parameters
         if cldf_parameter['id'] in lparameter_ids
         # consider parameters without values lparameters by default.
         or cldf_parameter['id'] not in cparameter_ids}
@@ -281,6 +283,25 @@ def iter_language_sources(cldf_languages, languages, sources):
         for source_string in sorted(set(cldf_language.get('source') or ()))
         if (source_tuple := parse_source(sources, source_string))
         and source_tuple.source_pk is not None)
+
+
+def _db_param(parameter_id, topic_pk, lparameters, cparameters):
+    if (cparam := cparameters.get(parameter_id)):
+        return models.UnitParameterTopic(
+            unitparameter_pk=cparam.pk,
+            topic_pk=topic_pk)
+    else:
+        return models.ParameterTopic(
+            parameter_pk=lparameters[parameter_id].pk,
+            topic_pk=topic_pk)
+
+
+def iter_parameter_topics(cldf_parameters, lparameters, cparameters, topics):
+    return (
+        _db_param(cldf_parameter['id'], topic.pk, lparameters, cparameters)
+        for cldf_parameter in cldf_parameters
+        for grammacode in cldf_parameter.get('Grammacodes', ())
+        if (topic := topics.get(grammacode)))
 
 
 def make_constructions(cldf_constructions, languages, contribution):
@@ -517,7 +538,9 @@ class CLDFBenchSubmission:
         self.sources = sources
         self.readme = readme
 
-    def add_to_database(self, contribution, all_languages, all_contributors):
+    def add_to_database(
+        self, contribution, all_languages, all_contributors, topics
+    ):
         # read cldf data
 
         cldf_constructions = list(read_table(self.cldf, 'constructions.csv'))
@@ -535,9 +558,7 @@ class CLDFBenchSubmission:
             if row['id'] in used_languages]
 
         if self.cldf.get('ParameterTable'):
-            cldf_parameters = {
-                cldf_parameter['id']: cldf_parameter
-                for cldf_parameter in read_table(self.cldf, 'ParameterTable')}
+            cldf_parameters = list(read_table(self.cldf, 'ParameterTable'))
         else:
             # Automatically build parameter table from value tables.
             cldf_parameters = cldf_parameters_from_values(
@@ -583,6 +604,8 @@ class CLDFBenchSubmission:
             parsed_names, contributors, contribution))
         DBSession.add_all(iter_language_sources(
             cldf_languages, languages, sources))
+        DBSession.add_all(iter_parameter_topics(
+            cldf_parameters, lparameters, cparameters, topics))
 
         constructions = make_constructions(
             cldf_constructions, languages, contribution)

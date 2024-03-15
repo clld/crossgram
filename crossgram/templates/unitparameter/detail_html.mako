@@ -4,6 +4,8 @@
 
 <h2>${_('Unit Parameter')}: ${ctx.name or ctx.id}</h2>
 
+## TODO: list of linked topics
+
 <p><em>From ${_('Contribution')}: ${h.link(request, ctx.contribution)}</em></p>
 
 <div>

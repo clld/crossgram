@@ -159,12 +159,26 @@ class Topic(Base, IdNameDescriptionMixin):
     pk = Column(Integer, primary_key=True)
     quotation = Column(Unicode)
     comment = Column(Unicode)
-    grammar_code = Column(Unicode)
+    grammacode = Column(Unicode)
     croft_counterpart = Column(Unicode)
     croft_description = Column(Unicode)
     wikipedia_counterpart = Column(Unicode)
     wikipedia_url = Column(Unicode)
     # TODO: maybe some denormalised counts (how many parameters do we have)
+
+
+class ParameterTopic(Base):
+    parameter_pk = Column(Integer, ForeignKey('parameter.pk'))
+    parameter = relationship(Parameter, backref='topic_assocs')
+    topic_pk = Column(Integer, ForeignKey('topic.pk'))
+    topic = relationship(Topic, backref='parameter_assocs')
+
+
+class UnitParameterTopic(Base):
+    unitparameter_pk = Column(Integer, ForeignKey('unitparameter.pk'))
+    unitparameter = relationship(UnitParameter, backref='topic_assocs')
+    topic_pk = Column(Integer, ForeignKey('topic.pk'))
+    topic = relationship(Topic, backref='unitparameter_assocs')
 
 
 class UnitReference(Base, HasSourceNotNullMixin):

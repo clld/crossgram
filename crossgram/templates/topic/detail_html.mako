@@ -10,18 +10,23 @@
 % endif
 
 ## TODO: could be in a side panel
-% if ctx.croft_counterpart or ctx.wikipedia_counterpart:
+% if ctx.grammacode or ctx.croft_counterpart or ctx.wikipedia_counterpart:
 <dl>
-  % if ctx.gold_counterpart:
+  % if ctx.grammacode:
+  <dt>Grammacode</dt>
+  ## TODO: link to grammaticon
+  <dd>${ctx.grammacode}</dd>
+  % endif
+  % if ctx.croft_counterpart:
   <dt>Croft counter-part</dt>
   <dd>
     ${ctx.croft_counterpart}
-    % if ctx.gold_comment:
-      <br>${ctx.croft_definition}
+    % if ctx.croft_description:
+    <br>${ctx.croft_description}
     % endif
   </dd>
   % endif
-  % if ctx.isocat_counterpart:
+  % if ctx.wikipedia_counterpart:
   <dt>Wikipedia counter-part</dt>
   <dd>
     % if ctx.wikipedia_url:
@@ -35,3 +40,5 @@
 % endif
 
 ## TODO: table with associated parameters
+## TODO: table with associated unitparameters
+

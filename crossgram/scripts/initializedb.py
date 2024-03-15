@@ -148,10 +148,11 @@ def main(args):
         for csv_topic in dsv.iterrows(
             grammaticon_repo / 'concepts.csv', dicts=True))
     topics = {
-        topic['ID']: models.Topic(
-            id=topic['ID'],
+        topic.get('Grammacode') or topic['ID']: models.Topic(
+            id=topic.get('Grammacode') or topic['ID'],
             name=topic['Name'],
             description=topic.get('Description'),
+            grammacode=topic.get('Grammacode'),
             comment=topic.get('Comment'),
             quotation=topic.get('Quotation'),
             croft_counterpart=topic.get('Croft_Counterpart'),
@@ -216,7 +217,7 @@ def main(args):
         DBSession.flush()
 
         new_languages, new_contributors = submission.add_to_database(
-            contrib, all_languages, all_contributors)
+            contrib, all_languages, all_contributors, topics)
         all_languages.update(
             (language.id, language)
             for language in new_languages)
