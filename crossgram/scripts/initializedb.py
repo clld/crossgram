@@ -62,6 +62,15 @@ def download_data(sid, contrib_md, cache_dir):
         return cache_dir / sid
 
 
+def maybe_read_file(file_path):
+    try:
+        with open(file_path, encoding='utf-8') as f:
+            return f.read()
+    except IOError:
+        # if there is no intro just return nothing
+        return None
+
+
 def collect_language_sources():
     existing_sources = set(DBSession.execute(
         sqlalchemy.select(
@@ -179,20 +188,13 @@ def main(args):
         if contrib_md.get('hide'):
             print('... but', sid, "doesn't want to be shown")
             continue
-        intro = None
-        try:
-            with (contrib_dir / 'intro.md').open(encoding='utf-8') as f:
-                intro = f.read()
-        except IOError:
-            # If there is no intro, there is no intro *shrug*
-            pass
 
-        path = download_data(sid, contrib_md, cache_dir)
-        if not path.exists():
-            print('could not find folder', str(path))
+        cldfbench_path = download_data(sid, contrib_md, cache_dir)
+        if not cldfbench_path.exists():
+            print('could not find folder', str(cldfbench_path))
             continue
 
-        submission = CLDFBenchSubmission.load(path, contrib_md)
+        submission = CLDFBenchSubmission.load(cldfbench_path, contrib_md)
 
         date_match = re.fullmatch(r'(\d+)-(\d+)-(\d+)', contrib_md['published'])
         assert date_match
@@ -203,6 +205,11 @@ def main(args):
         git_https = re.sub(
             '^git@([^:]*):', r'https://\1/', contrib_md.get('repo') or '')
 
+        intro = (
+            maybe_read_file(contrib_dir / 'intro.md')
+            or maybe_read_file(cldfbench_path / 'raw' / 'intro.md')
+            or submission.readme)
+
         contrib = models.CrossgramData(
             id=sid,
             number=int(contrib_md['number']),
@@ -211,7 +218,7 @@ def main(args):
             name=contrib_md.get('title') or submission.title,
             doi=contrib_md.get('doi'),
             git_repo=git_https,
-            description=intro or submission.readme)
+            description=intro)
         DBSession.add(contrib)
 
         DBSession.flush()
