@@ -1,10 +1,14 @@
 from functools import partial
+from itertools import chain
 
 from pyramid.config import Configurator
 # apparently the `from crossgram.interfaces import` clause below shadows this
 # import???
 from clld import interfaces as common_interfaces
+from clld.db.meta import DBSession
+from clld.db.models import common
 from clld.web.app import menu_item
+from clld.web.icon import ICON_MAP, Icon
 from clld_glottologfamily_plugin import util
 
 # we must make sure custom models are known at database initialization!
@@ -56,6 +60,16 @@ def main(global_config, **settings):
         LanguageByFamilyMapMarker(), common_interfaces.IMapMarker)
 
     config.register_resource('topic', models.Topic, ITopic, with_index=True)
+
+    custom_icons_names = {
+        name: True
+        for de in chain(
+            DBSession.query(common.DomainElement),
+            DBSession.query(common.UnitDomainElement))
+        if (name := de.jsondata.get('icon')) and name not in ICON_MAP}
+    for name in custom_icons_names:
+        config.registry.registerUtility(
+            Icon(name), common_interfaces.IIcon, name=name)
 
     config.register_menu(
         # ('dataset', partial(menu_item, 'dataset', label='Home')),
