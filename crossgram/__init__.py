@@ -5,6 +5,7 @@ from pyramid.config import Configurator
 # import???
 from clld import interfaces as common_interfaces
 from clld.web.app import menu_item
+from clld.web.icon import DEFAULT_ICON, Icon
 from clld_glottologfamily_plugin import util
 
 # we must make sure custom models are known at database initialization!
@@ -30,6 +31,12 @@ _('Unit Parameters')
 
 
 class LanguageByFamilyMapMarker(util.LanguageByFamilyMapMarker):
+    def __call__(self, ctx, req):
+        icon = self.get_icon(ctx, req) or DEFAULT_ICON
+        # making icons directly instead of trying to register every possible
+        # colour--shape combination
+        return Icon(icon).url(req)
+
     def get_icon(self, ctx, req):
         if common_interfaces.IValueSet.providedBy(ctx):
             icons = [
