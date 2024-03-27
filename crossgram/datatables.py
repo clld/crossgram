@@ -218,6 +218,22 @@ class FilteredLanguageSourcesCol(Col):
                 self._decoder.iter_values(language.source_comments))
 
 
+class ParameterTopicsCol(Col):
+    """Column listing linked topics for an L parameter."""
+    # NOTE: Also duck-types its way through C parameters
+
+    __kw__ = {'bSearchable': False, 'bSortable': False}
+
+    def format(self, item):
+        obj = self.get_obj(item)
+        topics = (
+            assoc.topic
+            for assoc in obj.topic_assocs)
+        return '; '.join(
+            link(self.dt.req, topic, label=topic.grammacode)
+            for topic in topics)
+
+
 class ExamplesCol(Col):
     """Column listing linked examples."""
 
@@ -520,6 +536,9 @@ class LParameters(datatables.Parameters):
                 models.LParameter.contribution_pk == self.crossgramdata.pk)
         else:
             query = query.join(models.LParameter.contribution)
+        query = query.options(
+            joinedload(common.Parameter.topic_assocs)
+            .joinedload(models.ParameterTopic.topic))
         return query
 
     def col_defs(self):
@@ -532,15 +551,16 @@ class LParameters(datatables.Parameters):
             model_col=models.LParameter.language_count,
             sTitle='Representation')
         details = DetailsRowLinkCol(self, 'd')
+        topics = ParameterTopicsCol(self, 'Topics')
         if self.crossgramdata:
-            return [details, name, desc, langcount]
+            return [details, name, desc, topics, langcount]
         else:
             contrib = LinkCol(
                 self,
                 'contribution',
                 model_col=models.CrossgramData.name,
                 get_obj=lambda i: i.contribution)
-            return [details, contrib, name, desc, langcount]
+            return [details, contrib, name, desc, topics, langcount]
 
 
 class LValues(datatables.Values):
