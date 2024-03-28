@@ -421,6 +421,9 @@ class CParameters(datatables.Unitparameters):
                 models.CParameter.contribution_pk == self.crossgramdata.pk)
         else:
             query = query.join(models.CParameter.contribution)
+        query = query.options(
+            joinedload(common.UnitParameter.topic_assocs)
+            .joinedload(models.UnitParameterTopic.topic))
         return query
 
     def col_defs(self):
@@ -433,15 +436,16 @@ class CParameters(datatables.Unitparameters):
             model_col=models.CParameter.language_count,
             sTitle='Representation')
         details = DetailsRowLinkCol(self, 'd')
+        topics = ParameterTopicsCol(self, 'Topics')
         if self.crossgramdata:
-            return [details, name, desc, langcount]
+            return [details, name, desc, topics, langcount]
         else:
             contrib = LinkCol(
                 self,
                 'contribution',
                 model_col=models.CrossgramData.name,
                 get_obj=lambda i: i.contribution)
-            return [details, contrib, name, desc, langcount]
+            return [details, contrib, name, desc, topics, langcount]
 
 
 class CValues(datatables.Unitvalues):

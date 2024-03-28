@@ -1,6 +1,7 @@
 <%inherit file="../${context.get('request').registry.settings.get('clld.app_template', 'app.mako')}"/>
 <%namespace name="util" file="../util.mako"/>
 <%! active_menu_item = "topics" %>
+<% import crossgram.models as m %>
 <%block name="title">${_('Topic')} ${ctx.name}</%block>
 
 <h2>${_('Topic')}: ${ctx.name or ctx.id}</h2>
@@ -39,6 +40,20 @@
 </dl>
 % endif
 
-## TODO: table with associated parameters
-## TODO: table with associated unitparameters
+% if ctx.parameter_assocs:
+<h3>Associated ${_('Parameters')}</h3>
+<ul>
+  % for param in h.DBSession.query(m.Parameter).join(m.ParameterTopic).filter(m.ParameterTopic.topic == ctx).distinct():
+  <li>${h.link(req, param)}</li>
+  % endfor
+</ul>
+% endif
 
+% if ctx.unitparameter_assocs:
+<h3>Associated ${_('Unit Parameters')}</h3>
+<ul>
+  % for param in h.DBSession.query(m.UnitParameter).join(m.UnitParameterTopic).filter(m.UnitParameterTopic.topic == ctx).distinct():
+  <li>${h.link(req, param)}</li>
+  % endfor
+</ul>
+% endif
