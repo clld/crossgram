@@ -74,7 +74,7 @@ def main(global_config, **settings):
         ('sentences', partial(menu_item, 'sentences')),
         ('topics', partial(menu_item, 'topics')),
         ('sources', partial(menu_item, 'sources')),
-        ('contributors', partial(menu_item, 'contributors')),
+        # ('contributors', partial(menu_item, 'contributors')),
     )
 
     for if_ in [common_interfaces.IRepresentation, common_interfaces.IMetadata]:
