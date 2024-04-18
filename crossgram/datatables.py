@@ -11,11 +11,11 @@ from clld.web.datatables.sentence import TsvCol
 from clld.web.datatables.unitvalue import UnitValueNameCol
 from clld.web.datatables.value import ValueNameCol, ValueSetCol
 from clld.web.util.helpers import (
-    link, external_link, gbs_link, linked_references,
+    map_marker_img, link, external_link, gbs_link, linked_references,
 )
 from clld.web.util.htmllib import HTML
-from clld_glottologfamily_plugin.datatables import FamilyCol
-from sqlalchemy import func, select
+from clld_glottologfamily_plugin.models import Family
+from sqlalchemy import func, null, select
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.expression import case
 
@@ -86,6 +86,44 @@ class GlottocodeCol(Col):
                 title='Language information at Glottolog')
         else:
             return ''
+
+
+class CustomFamilyCol(Col):
+    def __init__(
+        self, dt, name, language_cls, link=False, contribution_pk=None, **kw
+    ):
+        self._link = link
+        self._col = getattr(language_cls, 'family')
+        if contribution_pk is None:
+            family_query = select(Family.id, Family.name).order_by(Family.name)
+        else:
+            family_query = select(Family.id, Family.name) \
+                .join_from(models.ContributionLanguage, models.Variety) \
+                .join_from(models.Variety, Family) \
+                .where(models.ContributionLanguage.contribution_pk == contribution_pk) \
+                .order_by(Family.name) \
+                .distinct()
+        kw['choices'] = [('isolate', '--none--')]
+        kw['choices'].extend(
+            (id_, name)
+            for id_, name in DBSession.execute(family_query))
+        Col.__init__(self, dt, name, **kw)
+
+    def order(self):
+        return Family.name
+
+    def search(self, qs):
+        if qs == 'isolate':
+            return self._col == null()
+        return Family.id == qs
+
+    def format(self, item):
+        item = self.get_obj(item)
+        if item.family:
+            label = link(self.dt.req, item.family) if self._link else item.family.name
+        else:
+            label = 'isolate'
+        return HTML.div(map_marker_img(self.dt.req, item), ' ', label)
 
 
 class CountCol(Col):
@@ -338,7 +376,8 @@ class Languages(datatables.Languages):
         contribution_pk = self.crossgramdata.pk if self.crossgramdata else None
         source = FilteredLanguageSourcesCol(
             self, 'source', contribution_pk=contribution_pk)
-        family = FamilyCol(self, 'family', models.Variety)
+        family = CustomFamilyCol(
+            self, 'family', models.Variety, contribution_pk=contribution_pk)
         linktomap = LinkToMapCol(self, 'm')
         examples = ExamplesCol(self, 'examples')
         if self.crossgramdata:
