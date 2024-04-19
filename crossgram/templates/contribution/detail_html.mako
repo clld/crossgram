@@ -9,7 +9,7 @@
 <div class="tabbable">
 
     <ul class="nav nav-tabs">
-        <li class="active"><a href="#about" data-toggle="tab">Introduction</a></li>
+        <li class="active"><a href="#about" data-toggle="tab">About</a></li>
         <li><a href="#langs" data-toggle="tab">${_('Languages')}</a></li>
         % if ctx.lparameters:
             <li><a href="#lparams" data-toggle="tab">${_('Parameters')}</a></li>

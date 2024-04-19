@@ -16,7 +16,7 @@
             .count())
   %>
   <ul class="nav nav-tabs">
-    <li class="active"><a href="#about" data-toggle="tab">Introduction</a></li>
+    <li class="active"><a href="#about" data-toggle="tab">About</a></li>
     % if ctx.valuesets:
       <li><a href="#lparams" data-toggle="tab">${_('Parameters')}</a></li>
     % endif
