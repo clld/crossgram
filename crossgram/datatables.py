@@ -268,7 +268,7 @@ class ParameterTopicsCol(Col):
             assoc.topic
             for assoc in obj.topic_assocs)
         return '; '.join(
-            link(self.dt.req, topic, label=topic.grammacode)
+            link(self.dt.req, topic, label=topic.name)
             for topic in topics)
 
 
