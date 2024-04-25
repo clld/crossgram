@@ -671,7 +671,7 @@ class CLDFBenchSubmission:
             raise ValueError(f'No cldf metadata file found in {path}')
 
         bib_path = path / 'cldf' / 'sources.bib'
-        sources = bibtex.Database.from_file(bib_path) if bib_path.exists() else None
+        sources = bibtex.Database.from_file(bib_path, lowercase=True) if bib_path.exists() else None
 
         md_path = path / 'metadata.json'
         metadata = jsonlib.load(md_path) if md_path.exists() else {}
