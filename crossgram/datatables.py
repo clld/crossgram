@@ -1,3 +1,5 @@
+from itertools import chain
+
 from clld.db.meta import DBSession
 from clld.db.models import common
 from clld.db.util import get_distinct_values, icontains
@@ -264,12 +266,24 @@ class ParameterTopicsCol(Col):
 
     def format(self, item):
         obj = self.get_obj(item)
-        topics = (
-            assoc.topic
-            for assoc in obj.topic_assocs)
+        topics = (assoc.topic for assoc in obj.topic_assocs)
         return '; '.join(
             link(self.dt.req, topic, label=topic.name)
             for topic in topics)
+
+
+class TopicParametersCol(Col):
+    """Column listing linked parameters for a topic."""
+
+    __kw__ = {'bSearchable': False, 'bSortable': False}
+
+    def format(self, item):
+        obj = self.get_obj(item)
+        lparameters = (assoc.parameter for assoc in obj.parameter_assocs)
+        cparameters = (assoc.unitparameter for assoc in obj.unitparameter_assocs)
+        return '; '.join(
+            link(self.dt.req, parameter, label=parameter.name)
+            for parameter in chain(lparameters, cparameters))
 
 
 class ExamplesCol(Col):
@@ -794,16 +808,21 @@ class Sources(datatables.Sources):
 
 
 class Topics(DataTable):
+
+    def base_query(self, query):
+        return query.options(
+            joinedload(models.Topic.parameter_assocs)
+            .joinedload(models.ParameterTopic.parameter),
+            joinedload(models.Topic.unitparameter_assocs)
+            .joinedload(models.UnitParameterTopic.unitparameter))
+
     def col_defs(self):
         return [
             LinkCol(self, 'name', sTitle='Topic'),
             # TODO: link to grammaticon
             Col(self, 'grammacode'),
             Col(self, 'description'),
-            Col(self, 'croft_counterpart'),
-            # TODO: link to wikipedia if available
-            Col(self, 'wikipedia_counterpart'),
-            # TODO: feature count
+            TopicParametersCol(self, 'parameters', sTitle='Parameters'),
         ]
 
 
