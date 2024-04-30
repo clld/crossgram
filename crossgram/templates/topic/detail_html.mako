@@ -42,18 +42,30 @@
 
 % if ctx.parameter_assocs:
 <h3>Associated ${_('Parameters')}</h3>
+<% query = h.DBSession.query(m.LParameter) \
+     .join(m.ParameterTopic) \
+     .join(m.LParameter.contribution) \
+     .filter(m.ParameterTopic.topic == ctx) \
+     .distinct()
+%>
 <ul>
-  % for param in h.DBSession.query(m.Parameter).join(m.ParameterTopic).filter(m.ParameterTopic.topic == ctx).distinct():
-  <li>${h.link(req, param)}</li>
+  % for param in query:
+  <li>${h.link(req, param)} (from ${h.link(req, param.contribution)})</li>
   % endfor
 </ul>
 % endif
 
 % if ctx.unitparameter_assocs:
 <h3>Associated ${_('Unit Parameters')}</h3>
+<% query = h.DBSession.query(m.CParameter) \
+     .join(m.UnitParameterTopic) \
+     .join(m.CParameter.contribution) \
+     .filter(m.UnitParameterTopic.topic == ctx) \
+     .distinct()
+%>
 <ul>
-  % for param in h.DBSession.query(m.UnitParameter).join(m.UnitParameterTopic).filter(m.UnitParameterTopic.topic == ctx).distinct():
-  <li>${h.link(req, param)}</li>
+  % for param in query:
+  <li>${h.link(req, param)} (from ${h.link(req, param.contribution)})</li>
   % endfor
 </ul>
 % endif
