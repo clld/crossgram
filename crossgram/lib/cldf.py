@@ -406,14 +406,26 @@ def iter_construction_sources(cldf_constructions, constructions, sources):
         and source_tuple.source_pk is not None)
 
 
-def iter_construction_examples(cldf_constructions, constructions, examples):
+def iter_construction_examples(
+    cldf_constructions, cldf_cvalues, constructions, examples
+):
+    id_assocs = {
+        (construction['id'], example_id)
+        for construction in cldf_constructions
+        for example_id in constructions.get('exampleReference', ())}
+    id_assocs.update(
+        (cvalue['Construction_ID'], example_id)
+        for cvalue in cldf_cvalues
+        for example_id in cvalue.get('exampleReference', ()))
+    obj_assocs = (
+        (constructions[construction_id], examples[example_id])
+        for construction_id, example_id in id_assocs)
+    obj_assocs = sorted(
+        obj_assocs,
+        key=lambda pair: (pair[0].pk, pair[1].number))
     return (
-        models.UnitSentence(
-            unit_pk=constructions[cldf_construction['id']].pk,
-            sentence_pk=examples[example_id].pk)
-        for cldf_construction in cldf_constructions
-        for example_id in sorted(
-            set(cldf_construction.get('exampleReference') or ())))
+        models.UnitSentence(unit_pk=construction.pk, sentence_pk=example.pk)
+        for construction, example in obj_assocs)
 
 
 def make_cvalues(
@@ -626,8 +638,6 @@ class CLDFBenchSubmission:
             cldf_examples, examples, sources))
         DBSession.add_all(iter_construction_sources(
             cldf_constructions, constructions, sources))
-        DBSession.add_all(iter_construction_examples(
-            cldf_constructions, constructions, examples))
 
         cvalues = make_cvalues(
             cldf_cvalues, constructions, cparameters, ccodes, contribution)
@@ -639,6 +649,8 @@ class CLDFBenchSubmission:
 
         DBSession.flush()
 
+        DBSession.add_all(iter_construction_examples(
+            cldf_constructions, cldf_cvalues, constructions, examples))
         DBSession.add_all(iter_value_sources(cldf_lvalues, lvaluesets, sources))
         DBSession.add_all(iter_cvalue_examples(cldf_cvalues, cvalues, examples))
         DBSession.add_all(iter_cvalue_sources(cldf_cvalues, cvalues, sources))

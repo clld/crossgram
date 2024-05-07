@@ -286,10 +286,29 @@ class TopicParametersCol(Col):
             for parameter in chain(lparameters, cparameters))
 
 
+def object_examples(contribution, obj):
+    return [
+        example
+        for example in getattr(obj, 'sentences', ())
+        if not contribution
+        or example.contribution_pk == contribution.pk]
+
+
+def construction_examples(_, construction):
+    # no need to filter by contrib; constructions are tied to them anyways
+    return [
+        assoc.sentence
+        for assoc in construction.sentence_assocs]
+
+
 class ExamplesCol(Col):
     """Column listing linked examples."""
 
     __kw__ = {'bSearchable': False, 'bSortable': False}
+
+    def __init__(self, *args, example_collector=object_examples, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._example_collector = example_collector
 
     def format(self, item):
         obj = self.get_obj(item)
@@ -301,11 +320,7 @@ class ExamplesCol(Col):
             else:
                 return f'({example.id})'
 
-        examples = [
-            example
-            for example in getattr(obj, 'sentences', ())
-            if not contribution
-            or example.contribution_pk == contribution.pk]
+        examples = self._example_collector(contribution, obj)
         if contribution:
             examples.sort(key=lambda ex: ex.number)
         else:
@@ -418,7 +433,9 @@ class Constructions(datatables.Units):
     __constraints__ = [common.Language, models.CrossgramData]
 
     def base_query(self, query):
-        query = DBSession.query(models.Construction)
+        query = DBSession.query(models.Construction).options(
+            joinedload(common.Unit.sentence_assocs)
+            .joinedload(models.UnitSentence.sentence))
 
         if self.crossgramdata:
             query = query.filter(
@@ -448,20 +465,21 @@ class Constructions(datatables.Units):
             model_col=models.CrossgramData.name,
             get_obj=lambda i: i.contribution,
             choices=contribs_with_constr)
-
+        examples = ExamplesCol(
+            self, 'examples', example_collector=construction_examples)
         if self.crossgramdata:
             language = CustomLangNameCol(
                 self, 'custom_name', self.crossgramdata.pk,
                 get_obj=lambda i: i.language,
                 sTitle='Language')
-            return [language, name, desc]
+            return [language, name, desc, examples]
         elif self.language:
-            return [name, desc, contrib]
+            return [name, desc, examples, contrib]
         else:
             language = LinkCol(
                 self, 'language', model_col=common.Language.name,
                 get_obj=lambda i: i.language)
-            return [language, name, desc, contrib]
+            return [language, name, desc, examples, contrib]
 
 
 class CParameters(datatables.Unitparameters):
