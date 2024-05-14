@@ -456,8 +456,11 @@ class Constructions(datatables.Units):
         desc = Col(self, 'description')
         contrib_query = select(models.CrossgramData.name)\
             .join_from(models.Construction, models.CrossgramData)\
-            .order_by(models.CrossgramData.name)\
-            .distinct()
+            .order_by(models.CrossgramData.name)
+        if self.language:
+            contrib_query = contrib_query.filter(
+                models.Construction.language_pk == self.language.pk)
+        contrib_query = contrib_query.distinct()
         contribs_with_constr = [c for c, in DBSession.execute(contrib_query)]
         contrib = LinkCol(
             self,
@@ -511,11 +514,18 @@ class CParameters(datatables.Unitparameters):
         if self.crossgramdata:
             return [details, name, desc, topics, langcount]
         else:
+            contrib_query = select(models.CrossgramData.name)\
+                .join_from(models.CParameter, models.CrossgramData)\
+                .order_by(models.CrossgramData.name)\
+                .distinct()
+            contribs_with_cparam = [
+                c for c, in DBSession.execute(contrib_query)]
             contrib = LinkCol(
                 self,
                 'contribution',
                 model_col=models.CrossgramData.name,
-                get_obj=lambda i: i.contribution)
+                get_obj=lambda i: i.contribution,
+                choices=contribs_with_cparam)
             return [details, contrib, name, desc, topics, langcount]
 
 
@@ -630,11 +640,18 @@ class LParameters(datatables.Parameters):
         if self.crossgramdata:
             return [details, name, desc, topics, langcount]
         else:
+            contrib_query = select(models.CrossgramData.name)\
+                .join_from(models.LParameter, models.CrossgramData)\
+                .order_by(models.CrossgramData.name)\
+                .distinct()
+            contribs_with_lparam = [
+                c for c, in DBSession.execute(contrib_query)]
             contrib = LinkCol(
                 self,
                 'contribution',
                 model_col=models.CrossgramData.name,
-                get_obj=lambda i: i.contribution)
+                get_obj=lambda i: i.contribution,
+                choices=contribs_with_lparam)
             return [details, contrib, name, desc, topics, langcount]
 
 
@@ -682,11 +699,24 @@ class LValues(datatables.Values):
             sTitle=self.req.translate('Parameter'),
             model_col=common.Parameter.name,
             get_object=lambda i: i.valueset.parameter)
+        contrib_query = select(common.Contribution.name)\
+            .join_from(common.ValueSet, common.Contribution)\
+            .order_by(common.Contribution.name)
+        if self.language:
+            contrib_query = contrib_query.filter(
+                common.ValueSet.language_pk == self.language.pk)
+        if self.parameter:
+            contrib_query = contrib_query.filter(
+                common.ValueSet.parameter_pk == self.parameter.pk)
+        contrib_query = contrib_query.distinct()
+        contribs_with_lval = [
+            c for c, in DBSession.execute(contrib_query)]
         contrib = LinkCol(
             self,
             'contribution',
             model_col=common.Contribution.name,
-            get_object=lambda i: i.valueset.contribution)
+            get_object=lambda i: i.valueset.contribution,
+            choices=contribs_with_lval)
         sources = RefsCol(self, 'source', get_object=lambda i: i.valueset)
         comment = Col(self, 'description', sTitle='Comment')
         # details = DetailsRowLinkCol(self, 'd')
@@ -762,11 +792,18 @@ class Examples(datatables.Sentences):
                 get_obj=lambda i: i.language,
                 bSortable=not self.language,
                 bSearchable=not self.language)
+            contrib_query = select(models.CrossgramData.name)\
+                .join_from(models.Example, models.CrossgramData)\
+                .order_by(models.CrossgramData.name)\
+                .distinct()
+            contribs_with_ex = [
+                c for c, in DBSession.execute(contrib_query)]
             contrib = LinkCol(
                 self,
                 'contribution',
                 model_col=models.CrossgramData.name,
-                get_obj=lambda i: i.contribution)
+                get_obj=lambda i: i.contribution,
+                choices=contribs_with_ex)
             return [
                 language, primary, gloss, translation, source, contrib,
                 details]
@@ -817,11 +854,18 @@ class Sources(datatables.Sources):
         if self.crossgramdata:
             return [details, name, title, author, year, languages]
         else:
+            contrib_query = select(models.CrossgramData.name)\
+                .join_from(models.CrossgramDataSource, models.CrossgramData)\
+                .order_by(models.CrossgramData.name)\
+                .distinct()
+            contribs_with_src = [
+                c for c, in DBSession.execute(contrib_query)]
             contrib = LinkCol(
                 self,
                 'contribution',
                 model_col=models.CrossgramData.name,
-                get_obj=lambda i: i.contribution)
+                get_obj=lambda i: i.contribution,
+                choices=contribs_with_src)
             return [name, title, author, year, contrib, languages, details]
 
 
