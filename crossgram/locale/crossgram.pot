@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: crossgram 0.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2024-03-11 10:58+0100\n"
+"POT-Creation-Date: 2024-05-24 10:46+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,59 +17,67 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.14.0\n"
 
-#: crossgram/__init__.py:16
+#: crossgram/__init__.py:17
 msgid "Sentence"
 msgstr ""
 
-#: crossgram/__init__.py:17
+#: crossgram/__init__.py:18
 msgid "Sentences"
 msgstr ""
 
-#: crossgram/__init__.py:18
+#: crossgram/__init__.py:19
 msgid "Contributor"
 msgstr ""
 
-#: crossgram/__init__.py:19
+#: crossgram/__init__.py:20
 msgid "Contributors"
 msgstr ""
 
-#: crossgram/__init__.py:20
+#: crossgram/__init__.py:21
 msgid "Contribution"
 msgstr ""
 
-#: crossgram/__init__.py:21
+#: crossgram/__init__.py:22
 msgid "Contributions"
 msgstr ""
 
-#: crossgram/__init__.py:22
+#: crossgram/__init__.py:23
 msgid "Parameter"
 msgstr ""
 
-#: crossgram/__init__.py:23
+#: crossgram/__init__.py:24
 msgid "Parameters"
 msgstr ""
 
-#: crossgram/__init__.py:24
+#: crossgram/__init__.py:25
 msgid "Topic"
 msgstr ""
 
-#: crossgram/__init__.py:25
+#: crossgram/__init__.py:26
 msgid "Topics"
 msgstr ""
 
-#: crossgram/__init__.py:26
+#: crossgram/__init__.py:27
 msgid "Unit"
 msgstr ""
 
-#: crossgram/__init__.py:27
+#: crossgram/__init__.py:28
 msgid "Units"
 msgstr ""
 
-#: crossgram/__init__.py:28
+#: crossgram/__init__.py:29
 msgid "Unit Parameter"
 msgstr ""
 
-#: crossgram/__init__.py:29
+#: crossgram/__init__.py:30
 msgid "Unit Parameters"
+msgstr ""
+
+#: crossgram/__init__.py:31
+msgid "Unit Value"
+msgstr ""
+
+#: crossgram/__init__.py:32
+msgid "Unit Values"
 msgstr ""
 

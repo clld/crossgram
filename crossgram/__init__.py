@@ -28,6 +28,8 @@ _('Unit')
 _('Units')
 _('Unit Parameter')
 _('Unit Parameters')
+_('Unit Value')
+_('Unit Values')
 
 
 class LanguageByFamilyMapMarker(util.LanguageByFamilyMapMarker):

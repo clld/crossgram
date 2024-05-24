@@ -211,6 +211,7 @@ class UnitValueSentence(Base):
     sentence_pk = Column(Integer, ForeignKey('sentence.pk'))
     unitvalue = relationship('UnitValue', backref='sentence_assocs')
     sentence = relationship('Sentence', backref='unitvalue_assocs')
+    description = Column(Unicode)
 
 
 @implementer(interfaces.ISource)
