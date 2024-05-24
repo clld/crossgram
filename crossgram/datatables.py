@@ -295,6 +295,7 @@ def object_examples(contribution, obj):
 
 
 def construction_examples(_, construction):
+    # NOTE: duck-typing this for cvalues as well
     # no need to filter by contrib; constructions are tied to them anyways
     return [
         assoc.sentence
@@ -563,6 +564,9 @@ class CValues(datatables.Unitvalues):
             query = query.join(common.Unit.language)
 
         if self.unit:
+            query = query.options(
+                joinedload(models.CValue.sentence_assocs)
+                .joinedload(models.UnitValueSentence.sentence))
             query = query.filter(
                 common.UnitValue.unit_pk == self.unit.pk)
 
@@ -600,7 +604,9 @@ class CValues(datatables.Unitvalues):
                 sTitle='Language')
             return [contrib, lang, constr, cvalue, comment, source]
         elif self.unit:
-            return [cparam, cvalue, comment, source]
+            examples = ExamplesCol(
+                self, 'examples', example_collector=construction_examples)
+            return [cparam, cvalue, comment, examples, source]
         elif self.language:
             return [contrib, constr, cparam, cvalue, comment, source]
         else:
