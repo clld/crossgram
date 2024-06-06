@@ -118,6 +118,7 @@ def main(args):
         name='Crossgram',
         description='Crossgram',
         published=date(2019, 12, 12),
+        contact='martin_haspelmath@eva.mpg.de',
         domain='crossgram.clld.org',
         publisher_name='Max Planck Institute for Evolutionary Anthropology',
         publisher_place='Leipzig',
