@@ -1,12 +1,6 @@
 <%inherit file="../snippet.mako"/>
 <%namespace name="util" file="../util.mako"/>
 
-% if ctx.description:
-<p>
-    ${ctx.description}
-</p>
-% endif
-
 % if ctx.domain:
 <% total = 0 %>
 <table class="table table-hover table-condensed domain" style="width: auto;">
@@ -29,5 +23,5 @@
     </tbody>
 </table>
 % else:
-<p><strong>Representation:</strong> ${ctx.language_count or 0}</p>
+<p><strong>No. of Languages:</strong> ${ctx.language_count or 0}</p>
 % endif
