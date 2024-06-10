@@ -8,7 +8,6 @@
 % endif
 
 % if ctx.domain:
-Possible values:
 <% total = 0 %>
 <table class="table table-hover table-condensed domain" style="width: auto;">
     <thead>

@@ -12,7 +12,7 @@
 <table class="table table-hover table-condensed domain" style="width: auto;">
     <thead>
         <tr>
-            <th>&#160;</th><th>Value</th><th>Representation</th>
+            <th>&#160;</th><th>Value</th><th>No. of Languages</th>
         </tr>
     </thead>
     <tbody>
