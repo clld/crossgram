@@ -510,7 +510,7 @@ class CParameters(datatables.Unitparameters):
             'language_count',
             model_col=models.CParameter.language_count,
             sTitle='Representation')
-        details = DetailsRowLinkCol(self, 'd')
+        details = DetailsRowLinkCol(self, 'd', button_text='Values')
         topics = ParameterTopicsCol(self, 'Topics')
         if self.crossgramdata:
             return [details, name, desc, topics, langcount]
@@ -641,7 +641,7 @@ class LParameters(datatables.Parameters):
             'language_count',
             model_col=models.LParameter.language_count,
             sTitle='Representation')
-        details = DetailsRowLinkCol(self, 'd')
+        details = DetailsRowLinkCol(self, 'd', button_text='Values')
         topics = ParameterTopicsCol(self, 'Topics')
         if self.crossgramdata:
             return [details, name, desc, topics, langcount]
