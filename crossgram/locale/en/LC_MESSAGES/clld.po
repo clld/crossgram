@@ -51,34 +51,42 @@ msgid "Parameters"
 msgstr "L-Parameters"
 
 #: crossgram/__init__.py:25
+msgid "Value"
+msgstr "L-Value"
+
+#: crossgram/__init__.py:26
+msgid "Values"
+msgstr "L-Values"
+
+#: crossgram/__init__.py:27
 msgid "Topic"
 msgstr ""
 
-#: crossgram/__init__.py:26
+#: crossgram/__init__.py:28
 msgid "Topics"
 msgstr ""
 
-#: crossgram/__init__.py:27
+#: crossgram/__init__.py:29
 msgid "Unit"
 msgstr "Construction"
 
-#: crossgram/__init__.py:28
+#: crossgram/__init__.py:30
 msgid "Units"
 msgstr "Constructions"
 
-#: crossgram/__init__.py:29
+#: crossgram/__init__.py:31
 msgid "Unit Parameter"
 msgstr "C-Parameter"
 
-#: crossgram/__init__.py:30
+#: crossgram/__init__.py:32
 msgid "Unit Parameters"
 msgstr "C-Parameters"
 
-#: crossgram/__init__.py:31
+#: crossgram/__init__.py:33
 msgid "Unit Value"
 msgstr "C-Value"
 
-#: crossgram/__init__.py:32
+#: crossgram/__init__.py:34
 msgid "Unit Values"
 msgstr "C-Values"
 
