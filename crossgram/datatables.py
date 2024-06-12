@@ -42,6 +42,14 @@ class DateCol(Col):
         return item.published.year
 
 
+class AffiliationCol(Col):
+    def format(self, item):
+        if item.url:
+            return external_link(item.url, label=item.address)
+        else:
+            return item.address
+
+
 class CustomLangNameCol(Col):
 
     def __init__(self, dt, name, contribution_pk, *args, **kwargs):
@@ -367,7 +375,7 @@ class ContributionContributors(DataTable):
     def col_defs(self):
         name = NameCol(self, 'name')
         contributions = ContributionsCol(self, 'Contributions')
-        address = AddressCol(self, 'address', sTitle='Affiliation')
+        address = AffiliationCol(self, 'address', sTitle='Affiliation')
         return [name, contributions, address]
 
 
