@@ -4,7 +4,7 @@
 
 <h2>${_('Units')}</h2>
 
-<p><em>See also: <a href="${req.route_url('unitparameters')}">List of all C-Parameters</a></em>.</p>
+<p><em>See also: <a href="${req.route_url('unitparameters')}">List of all ${_('Unit Parameters')}</a></em>.</p>
 
 <div>
   ${ctx.render()}
