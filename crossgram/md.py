@@ -14,21 +14,22 @@ class MetadataFromRec(Base):
     def rec(self, ctx, req):
         if interfaces.IContribution.providedBy(ctx):
             return bibtex.Record(
-                'article',
-                '{}-{}'.format(req.dataset.id, ctx.id),
+                'incollection',
+                f'{req.dataset.id}-{ctx.id}',
+                address=req.dataset.publisher_place,
                 author=[
-                    c.name
-                    for c in chain(
+                    author.name
+                    for author in chain(
                         ctx.primary_contributors,
                         ctx.secondary_contributors)],
-                year=str(ctx.published.year),
-                title=getattr(ctx, 'citation_name', str(ctx)),
-                journal=req.dataset.description,
-                volume=str(ctx.number),
-                address=req.dataset.publisher_place,
+                bootitle=req.dataset.name,
+                editor=[
+                    editor.contributor.name
+                    for editor in req.dataset.editors],
                 publisher=req.dataset.publisher_name,
+                title=getattr(ctx, 'citation_name', str(ctx)),
                 url=req.resource_url(ctx),
-                doi=ctx.doi)
+                year=str(ctx.original_year))
         else:
             return super().rec(ctx, req)
 

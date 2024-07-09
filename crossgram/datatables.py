@@ -7,7 +7,7 @@ from clld.web import datatables
 from clld.web.datatables.base import (
     Col, DataTable, DetailsRowLinkCol, ExternalLinkCol, LinkCol, LinkToMapCol,
 )
-from clld.web.datatables.contribution import ContributorsCol
+from clld.web.datatables.contribution import ContributorsCol, CitationCol
 from clld.web.datatables.contributor import NameCol, ContributionsCol, AddressCol
 from clld.web.datatables.sentence import TsvCol
 from clld.web.datatables.unitvalue import UnitValueNameCol
@@ -351,8 +351,8 @@ class CrossgramDatasets(DataTable):
             bSortable=False,
             sTitle='Data source',
             format=lambda i: i.doi_link() or i.git_link())
-        # cite_button = CitationCol(self, 'cite')
-        return [name, contributors, year, data_link]
+        cite_button = CitationCol(self, 'cite')
+        return [name, contributors, year, data_link, cite_button]
 
     def get_options(self):
         return {'aaSorting': [[2, 'asc']]}

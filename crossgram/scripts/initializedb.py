@@ -115,8 +115,8 @@ def main(args):
 
     dataset = common.Dataset(
         id=crossgram.__name__,
-        name='Crossgram',
-        description='Crossgram',
+        name='CrossGram',
+        description='CrossGram',
         published=date(2019, 12, 12),
         contact='martin_haspelmath@eva.mpg.de',
         domain='crossgram.clld.org',
