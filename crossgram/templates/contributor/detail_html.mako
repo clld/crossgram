@@ -15,7 +15,7 @@
 
 <dl>
     % if ctx.address:
-    <dt>${_('Address')}:</dt>
+    <dt>Affiliation:</dt>
     <dd>
         <address>
             ${h.text2html(ctx.address)|n}
@@ -23,7 +23,7 @@
     </dd>
     % endif
     % if ctx.url:
-    <dt>${_('Web:')}</dt>
+    <dt>Web page:</dt>
     <dd>${h.external_link(ctx.url)}</dd>
     % endif
     % if ctx.email:
