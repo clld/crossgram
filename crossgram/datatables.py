@@ -5,7 +5,7 @@ from clld.db.models import common
 from clld.db.util import get_distinct_values, icontains
 from clld.web import datatables
 from clld.web.datatables.base import (
-    Col, DataTable, DetailsRowLinkCol, LinkCol, LinkToMapCol,
+    Col, DataTable, DetailsRowLinkCol, ExternalLinkCol, LinkCol, LinkToMapCol,
 )
 from clld.web.datatables.contribution import ContributorsCol
 from clld.web.datatables.contributor import NameCol, ContributionsCol, AddressCol
@@ -40,14 +40,6 @@ class DateCol(Col):
 
     def format(self, item):
         return item.published.year
-
-
-class AffiliationCol(Col):
-    def format(self, item):
-        if item.url:
-            return external_link(item.url, label=item.address)
-        else:
-            return item.address
 
 
 class CustomLangNameCol(Col):
@@ -375,8 +367,9 @@ class ContributionContributors(DataTable):
     def col_defs(self):
         name = NameCol(self, 'name')
         contributions = ContributionsCol(self, 'Contributions')
-        address = AffiliationCol(self, 'address', sTitle='Affiliation')
-        return [name, contributions, address]
+        address = Col(self, 'address', sTitle='Affiliation')
+        url = ExternalLinkCol(self, 'url', sTitle='Web page')
+        return [name, contributions, address, url]
 
 
 class Languages(datatables.Languages):
