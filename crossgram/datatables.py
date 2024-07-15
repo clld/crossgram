@@ -19,7 +19,7 @@ from clld.web.util.htmllib import HTML
 from clld_glottologfamily_plugin.models import Family
 from sqlalchemy import func, null, select
 from sqlalchemy.orm import joinedload
-from sqlalchemy.sql.expression import case
+from sqlalchemy.sql.expression import case, or_
 
 from crossgram import models
 from crossgram.lib.horrible_denormaliser import BlockDecoder
@@ -838,7 +838,7 @@ class Sources(datatables.Sources):
 
         if self.language:
             query = query\
-                .join(models.CrossgramDataSource.languages)\
+                .join(models.CrossgramDataSource.languagereferences)\
                 .filter(models.LanguageReference.language_pk == self.language.pk)
         else:
             query = query.options(
@@ -852,6 +852,7 @@ class Sources(datatables.Sources):
         else:
             query = query.join(models.CrossgramDataSource.contribution)
 
+        print(query)
         return query
 
     def col_defs(self):
@@ -865,21 +866,23 @@ class Sources(datatables.Sources):
         author = Col(self, 'author')
         languages = SourceLanguageCol(self, 'languages')
         year = Col(self, 'year')
+        contrib_query = select(models.CrossgramData.name)\
+            .join_from(models.CrossgramDataSource, models.CrossgramData)\
+            .order_by(models.CrossgramData.name)\
+            .distinct()
+        contribs_with_src = [
+            c for c, in DBSession.execute(contrib_query)]
+        contrib = LinkCol(
+            self,
+            'contribution',
+            model_col=models.CrossgramData.name,
+            get_obj=lambda i: i.contribution,
+            choices=contribs_with_src)
         if self.crossgramdata:
             return [details, name, title, author, year, languages]
+        elif self.language:
+            return [details, name, title, author, year, contrib]
         else:
-            contrib_query = select(models.CrossgramData.name)\
-                .join_from(models.CrossgramDataSource, models.CrossgramData)\
-                .order_by(models.CrossgramData.name)\
-                .distinct()
-            contribs_with_src = [
-                c for c, in DBSession.execute(contrib_query)]
-            contrib = LinkCol(
-                self,
-                'contribution',
-                model_col=models.CrossgramData.name,
-                get_obj=lambda i: i.contribution,
-                choices=contribs_with_src)
             return [name, title, author, year, contrib, languages, details]
 
 

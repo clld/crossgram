@@ -26,9 +26,9 @@
     % if ctx.example_count:
       <li><a href="#examples" data-toggle="tab">${_('Sentences')}</a></li>
     % endif
-    ## % if ctx.sources:
-    ##   <li><a href="#sources" data-toggle="tab">${_('Sources')}</a></li>
-    ## % endif
+    % if ctx.references:
+      <li><a href="#sources" data-toggle="tab">${_('Sources')}</a></li>
+    % endif
   </ul>
 
   <div class="tab-content">
@@ -74,6 +74,12 @@
     % if ctx.example_count:
     <div id="examples" class="tab-pane">
       ${request.get_datatable('sentences', h.models.Sentence, language=ctx).render()}
+    </div>
+    % endif
+
+    % if ctx.references:
+    <div id="sources" class="tab-pane">
+      ${request.get_datatable('sources', m.CrossgramDataSource, language=ctx).render()}
     </div>
     % endif
 
