@@ -39,14 +39,19 @@ ${ctx.coins(request)|n}
       <p><b>Contribution:</b> ${h.link(request, ctx.contribution)}</p>
       % if ctx.languagereferences:
       <%
-        lang_assocs = h.DBSession.query(models.LanguageReference) \
+        lang_assocs = h.DBSession.query(models.LanguageReference, models.ContributionLanguage) \
           .join(models.LanguageReference.language) \
+          .join(
+            models.ContributionLanguage,
+            models.ContributionLanguage.language_pk == models.LanguageReference.language_pk,
+            isouter=True) \
+          .filter(models.ContributionLanguage.contribution_pk == ctx.contribution_pk) \
           .filter(models.LanguageReference.source_pk == ctx.pk)
       %>
       <p><b>Languages:</b></p>
       <ul>
-      % for lang_assoc in lang_assocs:
-        <li>${h.link(request, lang_assoc.language)}</li>
+      % for lang_assoc, contrib_lang in lang_assocs:
+        <li>${h.link(request, lang_assoc.language, label=contrib_lang.custom_language_name)}</li>
       % endfor
       <ul>
       % endif
