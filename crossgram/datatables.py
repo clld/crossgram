@@ -295,7 +295,7 @@ def object_examples(contribution, obj):
 
 
 def construction_examples(_, construction):
-    # NOTE: duck-typing this for cvalues as well
+    # NOTE: duck-typing this for lvalues and cvalues as well
     # no need to filter by contrib; constructions are tied to them anyways
     return [
         assoc.sentence
@@ -543,8 +543,11 @@ class CValues(datatables.Unitvalues):
         query = DBSession.query(common.UnitValue) \
             .join(common.UnitValue.unit) \
             .join(common.UnitValue.unitdomainelement, isouter=True) \
-            .join(common.UnitValue.references, isouter=True) \
-            .join(models.UnitValueReference.source, isouter=True)
+            .options(
+                joinedload(common.UnitValue.references)
+                .joinedload(models.UnitValueReference.source),
+                joinedload(common.UnitValue.sentence_assocs)
+                .joinedload(models.UnitValueSentence.sentence))
 
         if self.unitparameter:
             query = query.filter(
@@ -588,6 +591,8 @@ class CValues(datatables.Unitvalues):
             sTitle='Construction Parameter')
         comment = Col(self, 'description', sTitle='Comment')
         source = RefsCol(self, 'source')
+        examples = ExamplesCol(
+            self, 'examples', example_collector=construction_examples)
         contrib = LinkCol(
             self,
             'contribution',
@@ -603,13 +608,11 @@ class CValues(datatables.Unitvalues):
                 self, 'custom_name', self.unitparameter.contribution_pk,
                 get_obj=lambda i: i.unit.language,
                 sTitle='Language')
-            return [contrib, lang, constr, cvalue, comment, source]
+            return [contrib, lang, constr, cvalue, comment, source, examples]
         elif self.unit:
-            examples = ExamplesCol(
-                self, 'examples', example_collector=construction_examples)
-            return [cparam, cvalue, comment, examples, source]
+            return [cparam, cvalue, comment, source, examples]
         elif self.language:
-            return [contrib, constr, cparam, cvalue, comment, source]
+            return [contrib, constr, cparam, cvalue, comment, source, examples]
         else:
             lang = LinkCol(
                 self, 'language',
@@ -673,7 +676,9 @@ class LValues(datatables.Values):
             .options(
                 joinedload(common.Value.valueset)
                 .joinedload(common.ValueSet.references)
-                .joinedload(common.ValueSetReference.source))
+                .joinedload(common.ValueSetReference.source),
+                joinedload(common.Value.sentence_assocs)
+                .joinedload(common.ValueSentence.sentence))
 
         if self.parameter:
             query = query.filter(
@@ -726,6 +731,8 @@ class LValues(datatables.Values):
             choices=contribs_with_lval)
         sources = RefsCol(self, 'source', get_object=lambda i: i.valueset)
         comment = Col(self, 'description', sTitle='Comment')
+        examples = ExamplesCol(
+            self, 'examples', example_collector=construction_examples)
         # details = DetailsRowLinkCol(self, 'd')
 
         # XXX: is `contribution` *ever* set in crossgram?
@@ -739,9 +746,9 @@ class LValues(datatables.Values):
                 get_obj=lambda i: i.valueset.language,
                 sTitle='Language')
             # XXX add contribution col?
-            return [lang, value, comment, sources]
+            return [lang, value, comment, sources, examples]
         elif self.language:
-            return [contrib, param, value, comment, sources]
+            return [contrib, param, value, comment, sources, examples]
         else:
             lang = LinkCol(
                 self,
