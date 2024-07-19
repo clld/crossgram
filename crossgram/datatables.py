@@ -577,7 +577,7 @@ class CValues(datatables.Unitvalues):
         return query
 
     def col_defs(self):
-        cvalue = UnitValueNameCol(self, 'value')
+        cvalue = UnitValueNameCol(self, 'value', sTitle='Value')
         if self.unitparameter and self.unitparameter.domain:
             cvalue.choices = [de.name for de in self.unitparameter.domain]
 
@@ -701,7 +701,8 @@ class LValues(datatables.Values):
         return query
 
     def col_defs(self):
-        value = MoreIntuitiveValueNameCol(self, 'value', common.Value.name)
+        value = MoreIntuitiveValueNameCol(
+            self, 'value', common.Value.name, sTitle='Value')
         if self.parameter and self.parameter.domain:
             value.choices = [de.name for de in self.parameter.domain]
 
