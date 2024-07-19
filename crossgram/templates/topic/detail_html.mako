@@ -2,7 +2,7 @@
 <%namespace name="util" file="../util.mako"/>
 <%! active_menu_item = "topics" %>
 <% import crossgram.models as m %>
-<%block name="title">${_('Topic')} ${ctx.name}</%block>
+<%block name="title">${_('Topic')} ${ctx.name or ctx.id}</%block>
 
 <h2>${_('Topic')}: ${ctx.name or ctx.id}</h2>
 

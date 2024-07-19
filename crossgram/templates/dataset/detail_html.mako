@@ -1,4 +1,5 @@
 <%inherit file="../home_comp.mako"/>
+<%block name="title">Home</%block>
 
 ## <%def name="sidebar()">
 ##     <div class="well">

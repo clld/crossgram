@@ -1,9 +1,10 @@
 <%inherit file="../${context.get('request').registry.settings.get('clld.app_template', 'app.mako')}"/>
 <%namespace name="util" file="../util.mako"/>
 <%! active_menu_item = "units" %>
+<%block name="title">${_('Unit')} ${ctx.name or ctx.id}</%block>
 
 
-<h2>${_('Unit')}: ${ctx.name}</h2>
+<h2>${_('Unit')}: ${ctx.name or ctx.id}</h2>
 
 <p><em>From ${_('Contribution')}: ${h.link(request, ctx.contribution)}</em></p>
 

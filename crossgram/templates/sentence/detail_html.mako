@@ -1,6 +1,7 @@
 <%inherit file="../${context.get('request').registry.settings.get('clld.app_template', 'app.mako')}"/>
 <%namespace name="util" file="../util.mako"/>
 <%! active_menu_item = "sentences" %>
+<%block name="title">Example ${ctx.id}</%block>
 
 <%def name="sidebar()">
     <%util:well>

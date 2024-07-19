@@ -1,6 +1,7 @@
 <%inherit file="../${context.get('request').registry.settings.get('clld.app_template', 'app.mako')}"/>
 <%namespace name="util" file="../util.mako"/>
 <%! active_menu_item = "unitparameters" %>
+<%block name="title">${_('Unit Value')} ${ctx.unit.name}/${ctx.unitparameter.name}</%block>
 
 <h2>${_('Unit Value')}: ${ctx.unitdomainelement.name if ctx.unitdomainelement else ctx.name}</h2>
 

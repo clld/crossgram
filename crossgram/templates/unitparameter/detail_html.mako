@@ -2,6 +2,7 @@
 <%namespace name="util" file="../util.mako"/>
 <%! active_menu_item = "unitparameters" %>
 <%! import crossgram.models as m %>
+<%block name="title">${_('Unit Parameter')} ${ctx.name or ctx.id}</%block>
 
 <h2>${_('Unit Parameter')}: ${ctx.name or ctx.id}</h2>
 
