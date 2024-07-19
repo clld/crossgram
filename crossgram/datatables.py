@@ -852,7 +852,6 @@ class Sources(datatables.Sources):
         else:
             query = query.join(models.CrossgramDataSource.contribution)
 
-        print(query)
         return query
 
     def col_defs(self):
