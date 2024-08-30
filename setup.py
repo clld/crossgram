@@ -30,7 +30,7 @@ setup(
         'pyglottolog',
     ],
     extras_require={
-        'dev': ['flake8', 'waitress'],
+        'dev': ['flake8', 'waitress', 'cldfzenodo'],
         'test': [
             'mock',
             'pytest>=3.1',
