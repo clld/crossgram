@@ -209,7 +209,7 @@ def main(args):
         yyyy, mm, dd = date_match.groups()
         published = date(int(yyyy), int(mm), int(dd))
 
-        # strip off ssh stuff off git link
+        # strip ssh stuff off of git link
         git_https = re.sub(
             '^git@([^:]*):', r'https://\1/', contrib_md.get('repo') or '')
 
