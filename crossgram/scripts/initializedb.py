@@ -3,6 +3,7 @@ import re
 from datetime import date
 
 import cldfcatalog
+import cldfzenodo
 import git
 import sqlalchemy
 from clld.cliutil import Data
@@ -195,6 +196,12 @@ def main(args):
             print('could not find folder', str(cldfbench_path))
             continue
 
+        doi = contrib_md.get('doi')
+        if doi:
+            version = cldfzenodo.API.get_record(doi=doi).version
+        else:
+            version = None
+
         submission = CLDFBenchSubmission.load(cldfbench_path, contrib_md)
 
         date_match = re.fullmatch(r'(\d+)-(\d+)-(\d+)', contrib_md['published'])
@@ -217,7 +224,8 @@ def main(args):
             published=published,
             original_year=contrib_md.get('original-year') or str(published.year),
             name=contrib_md.get('title') or submission.title,
-            doi=contrib_md.get('doi'),
+            doi=doi,
+            version=version,
             git_repo=git_https,
             description=intro)
         DBSession.add(contrib)

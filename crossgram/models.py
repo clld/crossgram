@@ -53,6 +53,7 @@ class CrossgramData(CustomModelMixin, Contribution):
     toc = Column(Unicode)
     doi = Column(Unicode)
     git_repo = Column(Unicode)
+    version = Column(Unicode)
 
     def metalanguage_label(self, lang):
         style = self.jsondata['metalanguage_styles'].get(lang)
