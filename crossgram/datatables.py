@@ -1,4 +1,5 @@
 from itertools import chain
+from functools import partial
 
 from clld.db.meta import DBSession
 from clld.db.models import common
@@ -331,6 +332,53 @@ class ExamplesCol(Col):
             for example in examples)
 
 
+def object_constructions(obj):
+    # XXX(johannes): This is terrible.
+    # Long story short: common.Unit does not define a backref property for the
+    # `language` foreign key, so I can't just `language.units` (though I'm not
+    # sure if that would be *actually* less terrible to begin with)…
+    return list(
+        DBSession.query(models.Construction)
+        .join(models.Construction.language)
+        .filter(common.Language.pk == obj.pk))
+
+
+def object_constructions_by_contrib(contribution_pk, obj):
+    # XXX(johannes): This is terrible.
+    # Long story short: common.Unit does not define a backref property for the
+    # `language` foreign key, so I can't just `language.units` (though I'm not
+    # sure if that would be *actually* less terrible to begin with)…
+    assert contribution_pk is not None, 'we have a separate func for that'
+    return list(
+        DBSession.query(models.Construction)
+        .join(models.Construction.language)
+        .filter(common.Language.pk == obj.pk)
+        .filter(models.Construction.contribution_pk == contribution_pk))
+
+
+class ConstructionsCol(Col):
+    """Column listing linked constructions."""
+
+    __kw__ = {'bSearchable': False, 'bSortable': False}
+
+    def __init__(self, *args, contribution_pk=None, **kwargs,):
+        super().__init__(*args, **kwargs)
+        if contribution_pk is None:
+            self._construction_collector = object_constructions
+        else:
+            self._construction_collector = partial(
+                object_constructions_by_contrib, contribution_pk)
+
+    def format(self, item):
+        obj = self.get_obj(item)
+        constructions = self._construction_collector(obj)
+        constructions.sort(key=lambda constr: constr.name)
+        # XXX(johannes): Turn this into a bulleted list?
+        return semicolon_separated_span(
+            link(self.dt.req, construction, label=construction.name)
+            for construction in constructions)
+
+
 # Datatables
 
 class CrossgramDatasets(DataTable):
@@ -414,23 +462,23 @@ class Languages(datatables.Languages):
             self, 'family', models.Variety, contribution_pk=contribution_pk)
         linktomap = LinkToMapCol(self, 'm')
         examples = ExamplesCol(self, 'examples')
+        constructions = ConstructionsCol(
+            self, 'constructions',
+            contribution_pk=contribution_pk)
         if self.crossgramdata:
             custom_name = CustomLangNameCol(
                 self, 'custom_name',
                 contribution_pk=self.crossgramdata.pk,
                 sTitle='Name')
-            return [custom_name, glottocode, family, source, examples]
+            return [
+                custom_name, glottocode, family, source, examples,
+                constructions]
         else:
-            # example_count = ExampleCountCol(
-            #     self,
-            #     'example_count',
-            #     model_col=models.Variety.example_count,
-            #     sTitle='Examples')
             name = LinkCol(self, 'name')
             contrib = ContributionsCol(self, 'contributions')
             return [
                 name, glottocode, family, contrib, source, examples,
-                linktomap]
+                constructions, linktomap]
 
 
 class Constructions(datatables.Units):
