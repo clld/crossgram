@@ -200,6 +200,10 @@ def semicolon_separated_span(iterable):
     return HTML.span(*_generate_separators(iterable))
 
 
+def bulleted_list(iterable):
+    return HTML.ul(*map(HTML.li, iterable))
+
+
 class SourceLanguageCol(Col):
 
     """Column listing linked languages of a source."""
@@ -372,11 +376,22 @@ class ConstructionsCol(Col):
     def format(self, item):
         obj = self.get_obj(item)
         constructions = self._construction_collector(obj)
+        if not constructions:
+            return ''
+
         constructions.sort(key=lambda constr: constr.name)
-        # XXX(johannes): Turn this into a bulleted list?
-        return semicolon_separated_span(
-            link(self.dt.req, construction, label=construction.name)
-            for construction in constructions)
+        labels = [construction.name for construction in constructions]
+        # Some datasets have very long construction names, some datasets have
+        # very short construction names.
+        avg_length = sum(len(label) for label in labels) / len(labels)
+        if len(constructions) > 1 and avg_length > 10:
+            return bulleted_list(
+                link(self.dt.req, construction, label=label)
+                for construction, label in zip(constructions, labels))
+        else:
+            return semicolon_separated_span(
+                link(self.dt.req, construction, label=label)
+                for construction, label in zip(constructions, labels))
 
 
 # Datatables
