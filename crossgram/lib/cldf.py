@@ -78,8 +78,8 @@ def shorten_url(property_url):
     return anchor
 
 
-def read_table(cldf, table):
-    table = cldf.get(table)
+def read_table(cldf, table_name):
+    table = cldf.get(table_name)
     if not table:
         return
 
@@ -87,7 +87,7 @@ def read_table(cldf, table):
         column.name: shorten_url(column.propertyUrl.uri)
         for column in table.tableSchema.columns
         if column.propertyUrl}
-    for row in cldf[table]:
+    for row in table:
         yield {
             column_map.get(colname, colname): cell
             for colname, cell in row.items()}
