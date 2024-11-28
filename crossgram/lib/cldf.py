@@ -436,7 +436,7 @@ def make_cvalues(
             id='{}-{}'.format(contribution.id, cldf_value['id']),
             unit_pk=constructions[cldf_value['Construction_ID']].pk,
             unitparameter_pk=cparameters[cldf_value['parameterReference']].pk,
-            unitdomainelement=(code := ccodes.get(cldf_value['codeReference'])),
+            unitdomainelement=(code := ccodes.get(cldf_value.get('codeReference'))),
             name=code.name if code and code.name else cldf_value['value'],
             contribution_pk=contribution.pk,
             description=cldf_value.get('comment'),
