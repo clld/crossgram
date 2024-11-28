@@ -139,7 +139,7 @@ def make_cparameters(cldf_parameters, cldf_cvalues, contribution):
         cldf_parameter['id']: models.CParameter(
             id='{}-{}'.format(contribution.id, cldf_parameter['id']),
             contribution_pk=contribution.pk,
-            name=cldf_parameter['name'],
+            name=cldf_parameter.get('name') or cldf_parameter['id'],
             description=cldf_parameter['description'])
         for cldf_parameter in cldf_parameters
         if cldf_parameter['id'] in cparameter_ids}
@@ -156,7 +156,7 @@ def make_lparameters(
         cldf_parameter['id']: models.LParameter(
             id='{}-{}'.format(contribution.id, cldf_parameter['id']),
             contribution_pk=contribution.pk,
-            name=cldf_parameter['name'],
+            name=cldf_parameter.get('name') or cldf_parameter['id'],
             description=cldf_parameter['description'])
         for cldf_parameter in cldf_parameters
         if cldf_parameter['id'] in lparameter_ids
