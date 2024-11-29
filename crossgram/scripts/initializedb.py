@@ -1,6 +1,7 @@
 import pathlib
 import re
 from datetime import date
+from itertools import chain
 
 import cldfcatalog
 import cldfzenodo
@@ -166,10 +167,10 @@ def main(args):
             grammacode=topic.get('Grammacode'),
             comment=topic.get('Comment'),
             quotation=topic.get('Quotation'),
-            croft_counterpart=topic.get('Croft_Counterpart'),
-            croft_description=topic.get('Croft_Description'),
             wikipedia_counterpart=topic.get('Wikipedia_Counterpart'),
-            wikipedia_url=topic.get('Wikipedia_URL'))
+            wikipedia_url=topic.get('Wikipedia_URL'),
+            sil_counterpart=topic.get('SIL_Counterpart'),
+            sil_url=topic.get('SIL_URL'))
         for topic in csv_topics}
     DBSession.add_all(topics.values())
 
@@ -244,6 +245,7 @@ def main(args):
         print('... done')
 
     DBSession.flush()
+
     print('Loading language family data...')
     catconf = cldfcatalog.Config.from_file()
     glottolog_path = catconf.get_clone('glottolog')

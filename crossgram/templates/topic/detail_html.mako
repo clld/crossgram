@@ -11,19 +11,20 @@
 % endif
 
 ## TODO: could be in a side panel
-% if ctx.grammacode or ctx.croft_counterpart or ctx.wikipedia_counterpart:
+% if ctx.grammacode or ctx.sil_counterpart or ctx.wikipedia_counterpart:
 <dl>
   % if ctx.grammacode:
   <dt>Grammacode</dt>
   ## TODO: link to grammaticon
   <dd>${ctx.grammacode}</dd>
   % endif
-  % if ctx.croft_counterpart:
-  <dt>Croft counter-part</dt>
+  % if ctx.sil_counterpart:
+  <dt>SIL counter-part</dt>
   <dd>
-    ${ctx.croft_counterpart}
-    % if ctx.croft_description:
-    <br>${ctx.croft_description}
+    % if ctx.sil_url:
+    ${h.external_link(ctx.sil_url, label=ctx.sil_counterpart)}
+    % else:
+    ${ctx.sil_counterpart}
     % endif
   </dd>
   % endif

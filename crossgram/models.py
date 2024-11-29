@@ -5,6 +5,7 @@ from sqlalchemy import (
     Column,
     Unicode,
     Integer,
+    Boolean,
     ForeignKey,
     UniqueConstraint,
     Date,
@@ -161,11 +162,12 @@ class Topic(Base, IdNameDescriptionMixin):
     quotation = Column(Unicode)
     comment = Column(Unicode)
     grammacode = Column(Unicode)
-    croft_counterpart = Column(Unicode)
-    croft_description = Column(Unicode)
     wikipedia_counterpart = Column(Unicode)
     wikipedia_url = Column(Unicode)
-    # TODO: maybe some denormalised counts (how many parameters do we have)
+    sil_counterpart = Column(Unicode)
+    sil_url = Column(Unicode)
+    # TODO: remove when we move to showing *all* topics
+    used = Column(Boolean, default=False)
 
 
 class ParameterTopic(Base):
