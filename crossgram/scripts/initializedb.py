@@ -272,6 +272,15 @@ def prime_cache(args):
     it will have to be run periodically whenever data has been updated.
     """
 
+    # TODO: remove when we move to showing *all* topics
+    used_topics = {
+        tuple_of_size_one[0]
+        for tuple_of_size_one in chain(
+            DBSession.execute(sqlalchemy.select(models.ParameterTopic.topic_pk).distinct()),
+            DBSession.execute(sqlalchemy.select(models.UnitParameterTopic.topic_pk).distinct()))}
+    for topic in DBSession.query(models.Topic):
+        topic.used = topic.pk in used_topics
+
     print('Parsing markdown intros...')
     for contrib in DBSession.query(models.Contribution):
         if contrib.description:

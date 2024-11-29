@@ -955,11 +955,14 @@ class Sources(datatables.Sources):
 class Topics(DataTable):
 
     def base_query(self, query):
-        return query.options(
+        query = query.options(
             joinedload(models.Topic.parameter_assocs)
             .joinedload(models.ParameterTopic.parameter),
             joinedload(models.Topic.unitparameter_assocs)
             .joinedload(models.UnitParameterTopic.unitparameter))
+        # TODO: remove when we move to showing *all* topics
+        query = query.filter(models.Topic.used == True)
+        return query
 
     def col_defs(self):
         return [
