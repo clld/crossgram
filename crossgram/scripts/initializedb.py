@@ -316,7 +316,7 @@ def prime_cache(args):
         for languoid in glottolog_languages.values()
         if (isocode := languoid.iso)}
 
-    print('...done')
+    print('... done')
     print('Denormalising language info (glottocodes, macroarea, alt names, etc.)')
 
     for obj in DBSession.query(common.LanguageIdentifier).all():
