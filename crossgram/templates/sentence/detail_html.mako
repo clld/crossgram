@@ -16,7 +16,7 @@
                 <ul>
                     % for va in ctx.value_assocs:
                         % if va.value:
-                    <li>${h.link(request, va.value.valueset, label='%s: %s' % (va.value.valueset.parameter.name, va.value.domainelement.name))}</li>
+                    <li>${h.link(request, va.value.valueset, label=f'{va.value.valueset.parameter.name}: {va.value.domainelement.name if va.value.domainelement else va.value.name}')}</li>
                         % endif
                     % endfor
                 </ul>
@@ -40,7 +40,7 @@
                 <ul>
                     % for va in ctx.unitvalue_assocs:
                         % if va.unitvalue:
-                    <li>${h.link(request, va.unitvalue, label='%s: %s' % (va.unitvalue.unitparameter.name, va.unitvalue.name))}</li>
+                    <li>${h.link(request, va.unitvalue, label=f'{va.unitvalue.unitparameter.name}: {va.unitvalue.domainelement.name if va.unitvalue.domainelement else va.unitvalue.name}')}</li>
                         % endif
                     % endfor
                 </ul>
