@@ -40,7 +40,7 @@
                 <ul>
                     % for va in ctx.unitvalue_assocs:
                         % if va.unitvalue:
-                    <li>${h.link(request, va.unitvalue, label=f'{va.unitvalue.unitparameter.name}: {va.unitvalue.domainelement.name if va.unitvalue.domainelement else va.unitvalue.name}')}</li>
+                          <li>${h.link(request, va.unitvalue, label=f'{va.unitvalue.unitparameter.name}: {va.unitvalue.unitdomainelement.name if va.unitvalue.unitdomainelement else va.unitvalue.name}')}</li>
                         % endif
                     % endfor
                 </ul>
