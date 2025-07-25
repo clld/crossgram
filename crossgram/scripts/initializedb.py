@@ -1,16 +1,16 @@
 import pathlib
 import re
 from datetime import date
-from itertools import chain
+from itertools import chain, cycle
 
 import cldfcatalog
 import cldfzenodo
 import git
 import sqlalchemy
-from clld.cliutil import Data
 from clld.db.meta import DBSession
 from clld.db.models import common
-from clld_glottologfamily_plugin.util import load_families
+from clld.web.icon import ORDERED_ICONS
+from clld_glottologfamily_plugin.util import Family
 from clldutils import jsonlib
 from clldutils.misc import slug
 from csvw import dsv
@@ -22,6 +22,8 @@ from crossgram import models
 from crossgram.lib.cldf import CLDFBenchSubmission
 from crossgram.lib.cldf_zenodo import download_from_doi
 from crossgram.lib.horrible_denormaliser import BlockEncoder
+
+ISOLATES_ICON = 'cff6600'
 
 
 def download_data(sid, contrib_md, cache_dir):
@@ -111,6 +113,12 @@ def collect_language_sources():
 def main(args):
     internal = input('[i]nternal or [e]xternal data (default: e): ').strip().lower() == 'i'
     which_submission = input("submission id or 'all' for all submissions (default: all): ").strip().lower() or 'all'
+
+    print('Loading glottolog...')
+    catconf = cldfcatalog.Config.from_file()
+    glottolog_path = catconf.get_clone('glottolog')
+    glottolog = Glottolog(glottolog_path)
+    languoids = {lg.id: lg for lg in glottolog.languoids()}
 
     all_languages = {}
     all_contributors = {}
@@ -234,7 +242,7 @@ def main(args):
         DBSession.flush()
 
         new_languages, new_contributors = submission.add_to_database(
-            contrib, all_languages, all_contributors, topics)
+            contrib, all_languages, all_contributors, topics, languoids)
         all_languages.update(
             (language.id, language)
             for language in new_languages)
@@ -247,17 +255,38 @@ def main(args):
     DBSession.flush()
 
     print('Loading language family data...')
-    catconf = cldfcatalog.Config.from_file()
-    glottolog_path = catconf.get_clone('glottolog')
-    languages_in_glottolog = [
-        language
-        for language_id, language in all_languages.items()
-        if re.fullmatch('[a-z]{4}[0-9]{4}', language_id)]
-    load_families(
-        Data(),
-        languages_in_glottolog,
-        strict=False,
-        glottolog_repos=glottolog_path)
+
+    def get_family_glottocode(languoid):
+        if languoid.lineage:
+            return languoids[languoid.lineage[0][1]]
+        elif languoid.level.id == glottolog.languoid_levels.family.id:
+            # Make sure top-level families are not treated as isolates!
+            return languoid
+        else:
+            return None
+
+    language_families = {
+        language.id: family
+        for language in all_languages.values()
+        if (languoid := languoids.get(language.id))
+        and (family := get_family_glottocode(languoid))}
+    unique_families = sorted(set(language_families.values()))
+    icons = cycle([i.name for i in ORDERED_ICONS if i.name != ISOLATES_ICON])
+    families = {
+        family.id: Family(
+            id=family.id,
+            name=family.name,
+            description=f'http://glottolog.org/resource/languoid/id/{family.id}',
+            jsondata={'icon': next(icons)})
+        for family in unique_families}
+    DBSession.add_all(families.values())
+
+    DBSession.flush()
+
+    for language in all_languages.values():
+        if (family := language_families.get(language.id)):
+            language.family_pk = families[family.id].pk
+
     print('... done')
 
     print('Collecting language sources...')
@@ -265,12 +294,7 @@ def main(args):
     DBSession.flush()
     print('... done')
 
-
-def prime_cache(args):
-    """If data needs to be denormalized for lookup, do that here.
-    This procedure should be separate from the db initialization, because
-    it will have to be run periodically whenever data has been updated.
-    """
+    # TODO: FORMERLY PRIME_CACHE
 
     # TODO: remove when we move to showing *all* topics
     used_topics = {
@@ -289,42 +313,25 @@ def prime_cache(args):
             contrib.markup_description = None
     print('... done')
 
-    print('Retrieving language data from glottolog...')
+    print('Adding language info from glottlog...')
 
-    catconf = cldfcatalog.Config.from_file()
-    glottolog_path = catconf.get_clone('glottolog')
-    glottolog = Glottolog(glottolog_path)
-
-    db_languages = {
-        language.id: language
-        for language in DBSession.query(common.Language)}
-    glottolog_languages = {
-        languoid.id: languoid
-        for languoid in glottolog.languoids(db_languages)}
-
+    glottolog_languages = [
+        languoid
+        for language in all_languages.values()
+        if (languoid := languoids.get(language.id))]
     glottocodes = {
         languoid.id: common.Identifier(
             id=languoid.id,
             name=languoid.id,
             type='glottolog')
-        for languoid in glottolog_languages.values()}
+        for languoid in glottolog_languages}
     isocodes = {
         languoid.id: common.Identifier(
             id=isocode,
             name=isocode,
             type='iso639-3')
-        for languoid in glottolog_languages.values()
+        for languoid in glottolog_languages
         if (isocode := languoid.iso)}
-
-    print('... done')
-    print('Denormalising language info (glottocodes, macroarea, alt names, etc.)')
-
-    for obj in DBSession.query(common.LanguageIdentifier).all():
-        DBSession.delete(obj)
-    for obj in DBSession.query(common.Identifier).all():
-        DBSession.delete(obj)
-
-    DBSession.flush()
 
     DBSession.add_all(glottocodes.values())
     DBSession.add_all(isocodes.values())
@@ -335,13 +342,13 @@ def prime_cache(args):
         common.LanguageIdentifier(
             language_pk=language.pk,
             identifier_pk=identifier.pk)
-        for language in db_languages.values()
+        for language in all_languages.values()
         if (identifier := glottocodes.get(language.id)))
     DBSession.add_all(
         common.LanguageIdentifier(
             language_pk=language.pk,
             identifier_pk=identifier.pk)
-        for language in db_languages.values()
+        for language in all_languages.values()
         if (identifier := isocodes.get(language.id)))
 
     name_encoder = BlockEncoder()
@@ -356,14 +363,7 @@ def prime_cache(args):
         source_encoder.record_value(
             lang_id, contrib_pk, contrib_lang.source_comment)
 
-    for language in db_languages.values():
-        if (languoid := glottolog_languages.get(language.id)):
-            language.glottolog_id = languoid.id
-            language.name = languoid.name
-            language.latitude = languoid.latitude
-            language.longitude = languoid.longitude
-            language.macroarea = languoid.macroareas[0].name if languoid.macroareas else ''
-
+    for language in all_languages.values():
         language.source_comments = source_encoder.encode(language.id)
         language.custom_names = name_encoder.encode(
             language.id, language.name)
@@ -440,3 +440,10 @@ def prime_cache(args):
 
     DBSession.flush()
     print('... done')
+
+
+def prime_cache(args):
+    """If data needs to be denormalized for lookup, do that here.
+    This procedure should be separate from the db initialization, because
+    it will have to be run periodically whenever data has been updated.
+    """

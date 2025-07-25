@@ -210,32 +210,46 @@ def only_existing_languages(contribution_languages, all_languages):
     return languages
 
 
-def only_nonexisting_languages(
-    cldf_languages, duplicate_languages, all_languages
-):
-    # FIXME: this is ugly
-    new_ids = set()
+class LanguageIDMaker:
+    def __init__(self, seen):
+        self.seen = set(seen)
 
-    def _new_language_id(cldf_language):
+    def make_id(self, cldf_language):
         id_candidate = cldf_language['glottocode'] or cldf_language['id']
         number = 1
         new_id = id_candidate
-        while new_id in all_languages or new_id in new_ids:
+        while new_id in self.seen:
             number += 1
             new_id = f'{id_candidate}-{number}'
-        new_ids.add(new_id)
+        self.seen.add(new_id)
         return new_id
 
-    # TODO add glottocode, iso code, and wals code if available
-    # TODO: add support for source_comment
-    #  ^ complication: multiple contributions may add different source
-    #  comments!
-    return {
-        cldf_language['id']: models.Variety(
-            id=_new_language_id(cldf_language),
+
+def make_language(cldf_language, language_id, languoids):
+    if (languoid := languoids.get(language_id)):
+        return models.Variety(
+            id=languoid.id,
+            glottolog_id=languoid.id,
+            name=languoid.name,
+            latitude=languoid.latitude or cldf_language['latitude'],
+            longitude=languoid.longitude or cldf_language['longitude'],
+            macroarea=languoid.macroareas[0].name if languoid.macroareas else cldf_language['macroarea'])
+    else:
+        return models.Variety(
+            id=language_id,
             name=cldf_language['name'],
             latitude=cldf_language['latitude'],
-            longitude=cldf_language['longitude'])
+            longitude=cldf_language['longitude'],
+            macroarea=cldf_language['macroarea'])
+
+
+def only_nonexisting_languages(
+    cldf_languages, duplicate_languages, all_languages, languoids,
+):
+    id_maker = LanguageIDMaker(all_languages)
+    return {
+        cldf_language['id']: make_language(
+            cldf_language, id_maker.make_id(cldf_language), languoids)
         for cldf_language in cldf_languages
         if cldf_language['id'] not in duplicate_languages}
 
@@ -551,7 +565,7 @@ class CLDFBenchSubmission:
         self.readme = readme
 
     def add_to_database(
-        self, contribution, all_languages, all_contributors, topics
+        self, contribution, all_languages, all_contributors, topics, languoids,
     ):
         # read cldf data
 
@@ -583,7 +597,7 @@ class CLDFBenchSubmission:
         contrib_langs = languages_for_contribution(cldf_languages)
         languages = only_existing_languages(contrib_langs, all_languages)
         added_languages = only_nonexisting_languages(
-            cldf_languages, languages, all_languages)
+            cldf_languages, languages, all_languages, languoids)
         languages.update(added_languages.items())
         DBSession.add_all(added_languages.values())
 
