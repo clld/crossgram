@@ -676,7 +676,13 @@ class CLDFBenchSubmission:
 
         DBSession.add_all(iter_value_examples(cldf_lvalues, lvalues, examples))
 
-        return added_languages.values(), added_contributors.values()
+        families = {
+            language.id: family
+            for cldf_language in cldf_languages
+            if (language := added_languages.get(cldf_language['id']))
+            and (family := cldf_language.get('Family'))}
+
+        return added_languages.values(), added_contributors.values(), families
 
     @classmethod
     def load(cls, path, contrib_md):

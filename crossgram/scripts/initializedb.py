@@ -75,6 +75,42 @@ def maybe_read_file(file_path):
         return None
 
 
+def make_families(language_families, languages, languoids):
+    families = {}
+    lang_family_map = {}
+    languoids_by_name = {slug(lg.name): lg for lg in languoids.values()}
+    icons = cycle([i.name for i in ORDERED_ICONS if i.name != ISOLATES_ICON])
+    for language in languages.values():
+        if (languoid := languoids.get(language.id)):
+            if languoid.lineage:
+                old_family_id = languoid.lineage[0][1]
+            elif languoid.level.id == 'family':
+                # Make sure top-level families are not treated as isolates!
+                old_family_id = languoid.id
+            else:
+                old_family_id = None
+        elif (family_string := language_families.get(language.id)):
+            if re.fullmatch(r'[a-z][a-z][a-z][a-z]\d\d\d\d', family_string.lower()):
+                old_family_id = family_string.lower()
+            else:
+                old_family_id = slug(family_string)
+        else:
+            continue
+        family = (
+            languoids.get(old_family_id)
+            or languoids_by_name.get(old_family_id))
+        if not family:
+            continue
+        if family.id not in families:
+            families[family.id] = Family(
+                id=family.id,
+                name=family.name,
+                description=f'http://glottolog.org/resource/languoid/id/{family.id}',
+                jsondata={'icon': next(icons)})
+        lang_family_map[language.id] = family.id
+    return families, lang_family_map
+
+
 def collect_language_sources():
     existing_sources = set(DBSession.execute(
         sqlalchemy.select(
@@ -122,6 +158,7 @@ def main(args):
 
     all_languages = {}
     all_contributors = {}
+    all_families = {}
 
     dataset = common.Dataset(
         id=crossgram.__name__,
@@ -241,51 +278,33 @@ def main(args):
 
         DBSession.flush()
 
-        new_languages, new_contributors = submission.add_to_database(
+        new_languages, new_contributors, new_families = submission.add_to_database(
             contrib, all_languages, all_contributors, topics, languoids)
+        assert all(lg.id not in all_languages for lg in new_languages)
+        assert all(lg_id not in all_languages for lg_id in new_families)
+        assert all(c.id not in all_contributors for c in new_contributors)
         all_languages.update(
             (language.id, language)
             for language in new_languages)
         all_contributors.update(
             (contributor.id, contributor)
             for contributor in new_contributors)
+        all_families.update(new_families.items())
 
         print('... done')
 
     DBSession.flush()
 
-    print('Loading language family data...')
+    print('Assigning language families...')
 
-    def get_family_glottocode(languoid):
-        if languoid.lineage:
-            return languoids[languoid.lineage[0][1]]
-        elif languoid.level.id == glottolog.languoid_levels.family.id:
-            # Make sure top-level families are not treated as isolates!
-            return languoid
-        else:
-            return None
-
-    language_families = {
-        language.id: family
-        for language in all_languages.values()
-        if (languoid := languoids.get(language.id))
-        and (family := get_family_glottocode(languoid))}
-    unique_families = sorted(set(language_families.values()))
-    icons = cycle([i.name for i in ORDERED_ICONS if i.name != ISOLATES_ICON])
-    families = {
-        family.id: Family(
-            id=family.id,
-            name=family.name,
-            description=f'http://glottolog.org/resource/languoid/id/{family.id}',
-            jsondata={'icon': next(icons)})
-        for family in unique_families}
+    families, lang_family_map = make_families(all_families, all_languages, languoids)
     DBSession.add_all(families.values())
 
     DBSession.flush()
 
     for language in all_languages.values():
-        if (family := language_families.get(language.id)):
-            language.family_pk = families[family.id].pk
+        if (family_id := lang_family_map.get(language.id)):
+            language.family_pk = families[family_id].pk
 
     print('... done')
 
@@ -294,7 +313,7 @@ def main(args):
     DBSession.flush()
     print('... done')
 
-    # TODO: FORMERLY PRIME_CACHE
+    # formerly prime_cache
 
     # TODO: remove when we move to showing *all* topics
     used_topics = {
