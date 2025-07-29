@@ -10,12 +10,12 @@
 <p>${ctx.description}</p>
 % endif
 
-## TODO: could be in a side panel
+## TODO(johannes): could be in a side panel
 % if ctx.grammacode or ctx.sil_counterpart or ctx.wikipedia_counterpart:
 <dl>
   % if ctx.grammacode:
   <dt>Grammacode</dt>
-  ## TODO: link to grammaticon
+  ## TODO(johannes): link to grammaticon
   <dd>${ctx.grammacode}</dd>
   % endif
   % if ctx.sil_counterpart:

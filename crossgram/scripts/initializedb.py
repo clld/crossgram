@@ -70,7 +70,7 @@ def maybe_read_file(file_path):
     try:
         with open(file_path, encoding='utf-8') as f:
             return f.read()
-    except IOError:
+    except OSError:
         # if there is no intro just return nothing
         return None
 
@@ -146,7 +146,7 @@ def collect_language_sources():
         for language_pk, source_pk in language_sources)
 
 
-def main(args):
+def main(_args):  # noqa: C901,PLR0912
     internal = input('[i]nternal or [e]xternal data (default: e): ').strip().lower() == 'i'
     which_submission = input("submission id or 'all' for all submissions (default: all): ").strip().lower() or 'all'
 
@@ -192,8 +192,8 @@ def main(args):
         common.Editor(
             dataset_pk=dataset.pk,
             contributor_pk=contributor.pk,
-            ord=ord)
-        for ord, contributor in enumerate(all_contributors.values(), 1))
+            ord=number)
+        for number, contributor in enumerate(all_contributors.values(), 1))
 
     internal_repo = pathlib.Path('../../crossgram/crossgram-internal')
     cache_dir = internal_repo / 'datasets'
@@ -243,10 +243,7 @@ def main(args):
             continue
 
         doi = contrib_md.get('doi')
-        if doi:
-            version = cldfzenodo.API.get_record(doi=doi).version
-        else:
-            version = None
+        version = cldfzenodo.API.get_record(doi=doi).version if doi else None
 
         submission = CLDFBenchSubmission.load(cldfbench_path, contrib_md)
 
@@ -315,7 +312,7 @@ def main(args):
 
     # formerly prime_cache
 
-    # TODO: remove when we move to showing *all* topics
+    # TODO(johannes): remove when we move to showing *all* topics
     used_topics = {
         tuple_of_size_one[0]
         for tuple_of_size_one in chain(

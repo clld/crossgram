@@ -9,7 +9,7 @@ from clld.web.datatables.base import (
     Col, DataTable, DetailsRowLinkCol, ExternalLinkCol, LinkCol, LinkToMapCol,
 )
 from clld.web.datatables.contribution import ContributorsCol, CitationCol
-from clld.web.datatables.contributor import NameCol, ContributionsCol, AddressCol
+from clld.web.datatables.contributor import NameCol, ContributionsCol
 from clld.web.datatables.sentence import TsvCol
 from clld.web.datatables.unitvalue import UnitValueNameCol
 from clld.web.datatables.value import ValueNameCol, ValueSetCol
@@ -20,7 +20,7 @@ from clld.web.util.htmllib import HTML
 from clld_glottologfamily_plugin.models import Family
 from sqlalchemy import func, null, select
 from sqlalchemy.orm import joinedload
-from sqlalchemy.sql.expression import case, or_
+from sqlalchemy.sql.expression import case
 
 from crossgram import models
 from crossgram.lib.horrible_denormaliser import BlockDecoder
@@ -93,10 +93,10 @@ class GlottocodeCol(Col):
 
 class CustomFamilyCol(Col):
     def __init__(
-        self, dt, name, language_cls, link=False, contribution_pk=None, **kw
+        self, dt, name, language_cls, link=False, contribution_pk=None, **kw,
     ):
         self._link = link
-        self._col = getattr(language_cls, 'family')
+        self._col = language_cls.family
         if contribution_pk is None:
             family_query = select(Family.id, Family.name).order_by(Family.name)
         else:
@@ -110,7 +110,7 @@ class CustomFamilyCol(Col):
         kw['choices'].extend(
             (id_, name)
             for id_, name in DBSession.execute(family_query))
-        Col.__init__(self, dt, name, **kw)
+        super().__init__(dt, name, **kw)
 
     def order(self):
         return Family.name
@@ -219,7 +219,7 @@ class SourceLanguageCol(Col):
 
 
 def format_source_reference(req, ref):
-    desc = ': %s' % ref.description if ref.description else ''
+    desc = f': {ref.description}' if ref.description else ''
     gbs = gbs_link(ref.source, pages=ref.description)
     return HTML.span(
         link(req, ref.source),
@@ -365,7 +365,7 @@ class ConstructionsCol(Col):
 
     __kw__ = {'bSearchable': False, 'bSortable': False}
 
-    def __init__(self, *args, contribution_pk=None, **kwargs,):
+    def __init__(self, *args, contribution_pk=None, **kwargs):
         super().__init__(*args, **kwargs)
         if contribution_pk is None:
             self._construction_collector = object_constructions
@@ -426,7 +426,7 @@ class CrossgramDatasets(DataTable):
 
 class ContributionContributors(DataTable):
     def base_query(self, query):
-        return DBSession.query(common.Contributor) \
+        return query \
             .join(common.Contributor.contribution_assocs) \
             .join(common.ContributionContributor.contribution)
 
@@ -569,7 +569,7 @@ class CParameters(datatables.Unitparameters):
         return query
 
     def col_defs(self):
-        # TODO: list of linked topics
+        # TODO(johannes): list of linked topics
         name = LinkCol(self, 'name', sTitle='C-Parameter')
         desc = Col(self, 'description')
         langcount = CountCol(
@@ -666,8 +666,8 @@ class CValues(datatables.Unitvalues):
             get_obj=lambda i: i.contribution,
             choices=get_distinct_values(models.Contribution.name))
 
-        # XXX: is `contribution` ever set?
-        # XXX: can `unitparameter` and `language` be set at the same time?
+        # XXX(johannes): is `contribution` ever set?
+        # XXX(johannes): can `unitparameter` and `language` be set at the same time?
         # ^ that might actually make sense
         if self.unitparameter:
             lang = CustomLangNameCol(
@@ -703,7 +703,7 @@ class LParameters(datatables.Parameters):
         return query
 
     def col_defs(self):
-        # TODO: list of linked topics
+        # TODO(johannes): list of linked topics
         name = LinkCol(self, 'name', sTitle='L-Parameter')
         desc = Col(self, 'description')
         langcount = CountCol(
@@ -802,8 +802,8 @@ class LValues(datatables.Values):
             self, 'examples', example_collector=construction_examples)
         # details = DetailsRowLinkCol(self, 'd')
 
-        # XXX: is `contribution` *ever* set in crossgram?
-        # XXX: can `parameter` and `language` be set at the same time?
+        # XXX(johannes): is `contribution` *ever* set in crossgram?
+        # XXX(johannes): can `parameter` and `language` be set at the same time?
         # ^ that would return a single value…
         if self.parameter:
             # link_to_map = LinkToMapCol(
@@ -812,7 +812,7 @@ class LValues(datatables.Values):
                 self, 'custom_name', self.parameter.contribution_pk,
                 get_obj=lambda i: i.valueset.language,
                 sTitle='Language')
-            # XXX add contribution col?
+            # XXX(johannes): add contribution col?
             return [lang, value, comment, sources, examples]
         elif self.language:
             return [contrib, param, value, comment, sources, examples]
@@ -822,7 +822,7 @@ class LValues(datatables.Values):
                 'language',
                 model_col=common.Language.name,
                 get_object=lambda i: i.valueset.language)
-            # XXX why valueset?
+            # XXX(johannes): why valueset?
             valueset = ValueSetCol(
                 self, 'valueset', bSearchable=False, bSortable=False)
             return [contrib, lang, param, valueset, comment, sources]
@@ -960,14 +960,14 @@ class Topics(DataTable):
             .joinedload(models.ParameterTopic.parameter),
             joinedload(models.Topic.unitparameter_assocs)
             .joinedload(models.UnitParameterTopic.unitparameter))
-        # TODO: remove when we move to showing *all* topics
-        query = query.filter(models.Topic.used == True)
+        # TODO(johannes): remove when we move to showing *all* topics
+        query = query.filter(models.Topic.used == True)  # noqa: E712
         return query
 
     def col_defs(self):
         return [
             LinkCol(self, 'name', sTitle='Topic'),
-            # TODO: link to grammaticon
+            # TODO(johannes): link to grammaticon
             Col(self, 'grammacode'),
             Col(self, 'description'),
             TopicParametersCol(self, 'parameters', sTitle='Parameters'),

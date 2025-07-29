@@ -58,22 +58,22 @@ class CrossgramData(CustomModelMixin, Contribution):
 
     def metalanguage_label(self, lang):
         style = self.jsondata['metalanguage_styles'].get(lang)
-        style = "label label-{0}".format(style) if style else lang
+        style = f'label label-{style}' if style else lang
         return HTML.span(lang, class_=style)
 
     def doi_link(self):
         if self.doi:
             return external_link(
-                'https://doi.org/{0.doi}'.format(self), label='DOI: {0.doi}'.format(self))
+                f'https://doi.org/{self.doi}', label=f'DOI: {self.doi}')
         return ''
 
     def git_link(self):
         if self.git_repo:
-            match = re.search(r'github\.com/([^/]*)/([^/]*)', self.git_repo)
-            if match:
-                label = 'Github: %s/%s' % match.groups()
+            if (m := re.search(r'github\.com/([^/]*)/([^/]*)', self.git_repo)):
+                org, repo = m.groups()
+                label = f'Github: {org}/{repo}'
             else:
-                label = 'Git: {}'.format(self.git_repo)
+                label = f'Git: {self.git_repo}'
             return external_link(self.git_repo, label=label)
         else:
             return ''
@@ -166,7 +166,7 @@ class Topic(Base, IdNameDescriptionMixin):
     wikipedia_url = Column(Unicode)
     sil_counterpart = Column(Unicode)
     sil_url = Column(Unicode)
-    # TODO: remove when we move to showing *all* topics
+    # TODO(johannes): remove when we move to showing *all* topics
     used = Column(Boolean, default=False)
 
 

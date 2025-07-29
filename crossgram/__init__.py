@@ -9,7 +9,7 @@ from clld.web.icon import DEFAULT_ICON, Icon
 from clld_glottologfamily_plugin import util
 
 # we must make sure custom models are known at database initialization!
-from crossgram import models, md  # noqa: F401
+from crossgram import models, md
 from crossgram.interfaces import ITopic
 
 
@@ -47,7 +47,7 @@ class LanguageByFamilyMapMarker(util.LanguageByFamilyMapMarker):
                 v.domainelement.jsondata['icon']
                 for v in ctx.values
                 if v.domainelement]
-            # FIXME this only shows the *first* value
+            # FIXME(johannes): this only shows the *first* value
             return icons[0] if len(icons) > 0 else None
         elif common_interfaces.IValue.providedBy(ctx) and ctx.domainelement:
             return ctx.domainelement.jsondata['icon']
@@ -57,7 +57,7 @@ class LanguageByFamilyMapMarker(util.LanguageByFamilyMapMarker):
             return super().get_icon(ctx, req)
 
 
-def main(global_config, **settings):
+def main(_global_config, **settings):
     """ This function returns a Pyramid WSGI application.
     """
     config = Configurator(settings=settings)

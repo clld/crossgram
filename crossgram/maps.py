@@ -26,14 +26,11 @@ class LParameterMap(maps.Map):
 
     def get_options(self):
         param = self.ctx
-        options = {
+        return {
             'resize_direction': 's',
             'info_query': {'parameter': param.pk},
             'hash': True,
         }
-        # if not param.domain:
-        #     options['show_labels'] = True
-        return options
 
 
 def includeme(config):

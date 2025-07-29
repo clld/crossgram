@@ -35,7 +35,7 @@
 
     <div id="about" class="tab-pane active">
       <div class="span8">
-        ## TODO: very empty!
+        ## TODO(johannes): very empty!
         ${ctx.description or ''|n}
         % if ctx.custom_names:
         <h3>Alternative names used by contributions</h3>

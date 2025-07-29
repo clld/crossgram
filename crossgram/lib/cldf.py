@@ -146,7 +146,7 @@ def make_cparameters(cldf_parameters, cldf_cvalues, contribution):
 
 
 def make_lparameters(
-    cldf_parameters, cldf_lvalues, contribution, cparameter_ids
+    cldf_parameters, cldf_lvalues, contribution, cparameter_ids,
 ):
     lparameter_ids = {
         parameter_id
@@ -202,7 +202,7 @@ def only_existing_languages(contribution_languages, all_languages):
                 break
             elif len(existing_langs) == 1:
                 # this is the one!
-                languages[old_id] = list(existing_langs.values())[0]
+                languages[old_id] = next(iter(existing_langs.values()))
                 break
             elif name in existing_langs:
                 # try and choose the language with the same name
@@ -279,11 +279,11 @@ def iter_contribution_languages(cldf_languages, languages, contribution):
 def iter_contribution_contributors(parsed_names, contributors, contribution):
     return (
         common.ContributionContributor(
-            ord=ord,
+            ord=number,
             primary=spec.get('primary', True),
             contribution_pk=contribution.pk,
             contributor_pk=contributors[author_id].pk)
-        for ord, (author_id, spec, _) in enumerate(parsed_names, 1))
+        for number, (author_id, spec, _) in enumerate(parsed_names, 1))
 
 
 def iter_language_sources(cldf_languages, languages, sources):
@@ -379,8 +379,8 @@ def make_ccodes(cldf_codes, cparameters, code_icons, contribution):
 def make_examples(cldf_examples, languages, contribution):
     return {
         cldf_example['id']: models.Example(
-            id=f'{contribution.number or contribution.id}-{ord}',
-            number=ord,
+            id=f'{contribution.number or contribution.id}-{number}',
+            number=number,
             name=cldf_example['primaryText'],
             description=cldf_example['translatedText'],
             analyzed='\t'.join(
@@ -391,7 +391,7 @@ def make_examples(cldf_examples, languages, contribution):
             language_pk=languages[cldf_example['languageReference']].pk,
             contribution_pk=contribution.pk,
             source_comment=cldf_example.get('Source_comment'))
-        for ord, cldf_example in enumerate(cldf_examples, 1)}
+        for number, cldf_example in enumerate(cldf_examples, 1)}
 
 
 def iter_example_sources(cldf_examples, examples, sources):
@@ -421,7 +421,7 @@ def iter_construction_sources(cldf_constructions, constructions, sources):
 
 
 def iter_construction_examples(
-    cldf_constructions, cldf_cvalues, constructions, examples
+    cldf_constructions, cldf_cvalues, constructions, examples,
 ):
     id_assocs = {
         (construction['id'], example_id)
@@ -443,7 +443,7 @@ def iter_construction_examples(
 
 
 def make_cvalues(
-    cldf_cvalues, constructions, cparameters, ccodes, contribution
+    cldf_cvalues, constructions, cparameters, ccodes, contribution,
 ):
     return {
         cldf_value['id']: models.CValue(
@@ -530,8 +530,7 @@ def make_lvalues(cldf_lvalues, lvaluesets, lcodes, contribution):
         # deal with a dataset violating a uniqueness constraint
         if unique_fields in unique_constraint:
             continue
-        else:
-            unique_constraint.add(unique_fields)
+        unique_constraint.add(unique_fields)
         valueset = lvaluesets[
             cldf_value['languageReference'],
             cldf_value['parameterReference']]
@@ -708,12 +707,12 @@ class CLDFBenchSubmission:
         md_path = path / 'metadata.json'
         metadata = jsonlib.load(md_path) if md_path.exists() else {}
 
-        # XXX maybe also allow README.txt?
+        # XXX(johannes): maybe also allow README.txt?
         readme_path = path / 'README.md'
         try:
             with readme_path.open(encoding='utf-8') as f:
                 readme = f.read().strip()
-        except IOError:
+        except OSError:
             readme = None
 
         authors = contrib_md.get('authors') or ()
