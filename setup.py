@@ -22,7 +22,7 @@ setup(
         # shut up pip
         'sqlalchemy<2.0',
         'cldfcatalog',
-        'clld>=11',
+        'clld>=11.3',
         'clldmpg>=4.2',
         'clld-glottologfamily-plugin',
         'gitpython',
