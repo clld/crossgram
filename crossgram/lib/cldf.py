@@ -699,7 +699,7 @@ class CLDFBenchSubmission:
                 for dataset in iter_datasets(path / 'cldf')
                 if dataset.module == 'StructureDataset')
         except StopIteration:
-            raise ValueError(f'No cldf metadata file found in {path}')
+            raise ValueError(f'No cldf metadata file found in {path}')  # noqa: B904
 
         bib_path = path / 'cldf' / 'sources.bib'
         sources = bibtex.Database.from_file(bib_path, lowercase=True) if bib_path.exists() else None

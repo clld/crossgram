@@ -196,7 +196,7 @@ def make_toc(html_desc):
         return str(soup), None
 
 
-def main(_args):  # noqa: C901,PLR0912
+def main(_args):
     internal = input('[i]nternal or [e]xternal data (default: e): ').strip().lower() == 'i'
     which_submission = input("submission id or 'all' for all submissions (default: all): ").strip().lower() or 'all'
 
