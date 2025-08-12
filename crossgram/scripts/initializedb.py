@@ -324,7 +324,8 @@ def main(_args):  # noqa: C901,PLR0912
     print('Parsing markdown intros...')
     for contrib in DBSession.query(models.Contribution):
         if contrib.description:
-            contrib.markup_description = markdown(contrib.description)
+            contrib.markup_description = markdown(
+                contrib.description, extensions=['tables'])
         else:
             contrib.markup_description = None
     print('... done')

@@ -26,6 +26,32 @@ div.intro h5 {
     font-size: 11.9px;
 }
 
+/* markdown tables in the intro */
+div.intro table {
+    border: 1px solid #ddd;
+    border-collapse: separate;
+    border-radius: 4px;
+    border-spaceing: 0;
+    margin-bottom: 6px !important;
+}
+div.intro thead th {
+    font-weight: bold;
+}
+div.intro table th, div.intro table td {
+    text-align: left;
+    vertical-align: bottom;
+    line-height: 20px;
+    padding: 8px;
+    border-left: 1px solid #ddd;
+    border-top: 1px solid #ddd;
+}
+div.intro tr th:first-child, div.intro tbody td:first-child {
+    border-left: none;
+}
+div.intro table tr:first-child th {
+    border-top: none;
+}
+
 .leaflet-tooltip {
     padding: 0.1ex 0.3ex 0.1ex 0.3ex;
 }
