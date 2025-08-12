@@ -1,5 +1,6 @@
 import pathlib
 import re
+from collections import namedtuple
 from datetime import date
 from itertools import chain, cycle
 
@@ -7,9 +8,11 @@ import cldfcatalog
 import cldfzenodo
 import git
 import sqlalchemy
+from bs4 import BeautifulSoup
 from clld.db.meta import DBSession
 from clld.db.models import common
 from clld.web.icon import ORDERED_ICONS
+from clld.web.util.htmllib import HTML
 from clld_glottologfamily_plugin.util import Family
 from clldutils import jsonlib
 from clldutils.misc import slug
@@ -144,6 +147,53 @@ def collect_language_sources():
             language_pk=language_pk,
             source_pk=source_pk)
         for language_pk, source_pk in language_sources)
+
+
+def make_toc(html_desc):
+    # just a throwaway type cause I don't like juggling bare tuples…
+    HtmlSection = namedtuple('HtmlSection', 'id level text')
+
+    soup = BeautifulSoup(html_desc, 'html.parser')
+    sections = []
+    for elem in soup.descendants:
+        if elem.name in {'h1', 'h2', 'h3', 'h4', 'h5'}:
+            elem_id = f'intro-section-{len(sections)+1}'
+            sections.append(HtmlSection(
+                id=elem_id,
+                level=int(elem.name[1]),
+                text=elem.get_text()))
+            # insert anchor
+            elem.insert(0, soup.new_tag('a', id=elem_id))
+            # add 'back to the top link'
+            toplink = soup.new_tag(
+                'a',
+                href='#top',
+                title='go to top of the page',
+                style="vertical-align: bottom")
+            toplink.string = '⇫'
+            elem.append(toplink)
+
+    if sections:
+        top_level = min(sec.level for sec in sections)
+        nested_sections = {}
+        current = None
+        for section in sections:
+            if section.level == top_level:
+                current = section
+                nested_sections[section] = []
+            elif section.level == top_level + 1:
+                assert current, 'first section must be top-level section'
+                nested_sections[current].append(section)
+        top_level_lis = [
+            HTML.li(
+                HTML.a(section.text, href=f'#{section.id}'),
+                HTML.ul(*[
+                    HTML.li(HTML.a(subsection.text, href=f'#{subsection.id}'))
+                    for subsection in subsections]))
+            for section, subsections in nested_sections.items()]
+        return str(soup), HTML.ul(*top_level_lis)
+    else:
+        return str(soup), None
 
 
 def main(_args):  # noqa: C901,PLR0912
@@ -324,8 +374,10 @@ def main(_args):  # noqa: C901,PLR0912
     print('Parsing markdown intros...')
     for contrib in DBSession.query(models.Contribution):
         if contrib.description:
-            contrib.markup_description = markdown(
-                contrib.description, extensions=['tables'])
+            html_desc = markdown(contrib.description, extensions=['tables'])
+            desc, toc = make_toc(html_desc)
+            contrib.markup_description = desc
+            contrib.toc = toc
         else:
             contrib.markup_description = None
     print('... done')

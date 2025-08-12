@@ -46,7 +46,10 @@
                     % if ctx.git_repo:
                     <p>Git: ${ctx.git_link()}</p>
                     % endif
+                    % if ctx.toc:
+                    <p>Table of contents:</p>
                     ${ctx.toc or ''|n}
+                    % endif
                 </div>
             </div>
         </div>

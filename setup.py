@@ -28,6 +28,7 @@ setup(
         'gitpython',
         'psycopg2',
         'pyglottolog',
+        'beautifulsoup4',
     ],
     extras_require={
         'dev': ['flake8', 'waitress', 'cldfzenodo'],
