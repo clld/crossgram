@@ -18,6 +18,14 @@ ${h.text2html(h.Markup(ctx.markup_description) if ctx.markup_description else ct
   <dd>${h.link(req, obj=ctx.unit)}</dd>
   <dt>${_('Unit Parameter')}:</dt>
   <dd>${h.link(req, obj=ctx.unitparameter)}</dd>
+  % if ctx.references or ctx.source_comment:
+  <dt class="source">${_('Source')}:</dt>
+  % if ctx.references:
+  <dd class="source">${h.linked_references(request, ctx)|n}</dd>
+  % elif ctx.source_comment:
+    <dd>${ctx.source_comment}</dd>
+  % endif
+  % endif
 </dl>
 
 % if ctx.sentence_assocs:

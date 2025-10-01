@@ -24,12 +24,12 @@ ${h.text2html(h.Markup(ctx.markup_description) if ctx.markup_description else ct
   <dd>${h.link(request, ctx.language)}</dd>
   <dt>${_('Parameter')}:</dt>
   <dd>${h.link(request, ctx.parameter)}</dd>
-  % if ctx.references or ctx.source:
+  % if ctx.references or ctx.source or ctx.source_comment:
   <dt class="source">${_('Source')}:</dt>
   % if ctx.references:
   <dd class="source">${h.linked_references(request, ctx)|n}</dd>
-  % elif ctx.source:
-  <dd>${ctx.source}</dd>
+  % elif ctx.source or ctx.source_comment:
+    <dd>${ctx.source or ctx.source_comment}</dd>
   % endif
   % endif
   % for k, v in ctx.datadict().items():
