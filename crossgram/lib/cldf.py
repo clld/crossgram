@@ -63,7 +63,7 @@ def parse_source(sources, source_string):
     match = re.fullmatch(r'([^[]+)(?:\[([^]]*)\])?', source_string)
     if match and match.group(1):
         bibkey, pages = match.groups()
-        source = sources.get(bibkey)
+        source = sources.get(bibkey.casefold())
         return SourceTuple(
             bibkey=bibkey,
             pages=pages or '',
@@ -256,7 +256,7 @@ def only_nonexisting_languages(
 
 def make_sources(records, contribution):
     sources = {
-        bibrecord.id: bibtex2source(bibrecord, models.CrossgramDataSource)
+        bibrecord.id.casefold(): bibtex2source(bibrecord, models.CrossgramDataSource)
         for bibrecord in records}
     for source in sources.values():
         # give sources unique ids
