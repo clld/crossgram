@@ -6,6 +6,28 @@
 
 <h2>${_('Language')}: ${ctx.name}</h2>
 
+## copy of util.language_meta with stuff I don't need turned off
+<%def name="language_meta(lang)">
+ <div class="accordion" id="sidebar-accordion">
+ % if getattr(request, 'map', False):
+ <%util:accordion_group eid="acc-map" parent="sidebar-accordion" title="${_('Map')}" open="${True}">
+   ${request.map.render()}
+   ${h.format_coordinates(lang)}
+ </%util:accordion_group>
+ % endif
+ % if lang.sources:
+ <%util:accordion_group eid="sources" parent="sidebar-accordion" title="${_('Sources')}">
+   <ul>
+     % for source in lang.sources:
+     <li>${h.link(request, source, label=source.description)}<br />
+     <small>${h.link(request, source)}</small></li>
+     % endfor
+   </ul>
+ </%util:accordion_group>
+ % endif
+ </div>
+</%def>
+
 <div class="tabbable">
 
   ## apparently units don't have backlinks to languages
@@ -35,8 +57,15 @@
 
     <div id="about" class="tab-pane active">
       <div class="span8">
-        ## TODO(johannes): very empty!
         ${ctx.description or ''|n}
+        <dl>
+          % if ctx.glottolog_id:
+          <dt>Glottocode:</dt>
+          <dd>${h.external_link('http://glottolog.org/resource/languoid/id/{}'.format(ctx.glottolog_id), label=ctx.glottolog_id)}</dt>
+          % endif
+          <dt>Language family:</dt>
+          <dd>${ctx.family.name if ctx.family else 'Isolate'}</dt>
+        </dl>
         % if ctx.custom_names:
         <h3>Alternative names used by contributions</h3>
         <ul>
@@ -55,7 +84,7 @@
         % endif
       </div>
       <div class="span4">
-        ${util.language_meta()}
+        ${language_meta(ctx)}
       </div>
     </div>
 
