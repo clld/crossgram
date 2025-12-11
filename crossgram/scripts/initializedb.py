@@ -274,6 +274,11 @@ def main(_args):
     else:
         submissions_path = internal_repo / 'submissions'
 
+    # :D
+    DBSession.execute(sqlalchemy.text("""
+        ALTER TABLE parameter DROP CONSTRAINT parameter_name_key;
+    """))
+
     for contrib_dir in submissions_path.iterdir():
         if not contrib_dir.is_dir():
             continue
