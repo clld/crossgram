@@ -382,7 +382,7 @@ def main(_args):
             contrib.markup_description = None
     print('... done')
 
-    print('Adding language info from glottlog...')
+    print('Adding language info from glottolog...')
 
     glottolog_languages = [
         languoid

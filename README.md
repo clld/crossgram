@@ -8,7 +8,7 @@ Rebuilding the database(s)
 
 ### Prerequisite: Concepticon
 
-Crossgram relies on data from the [Glottolog][glottlog] reference catalogue.  It
+Crossgram relies on data from the [Glottolog][glottolog] reference catalogue.  It
 will find it using [cldfcatalog][cldfcatalog].
 
 [glottolog]: https://github.com/glottolog/glottolog
