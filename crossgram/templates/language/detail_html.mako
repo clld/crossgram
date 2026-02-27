@@ -67,18 +67,21 @@
           <dd>${ctx.family.name if ctx.family else 'Isolate'}</dt>
         </dl>
         % if ctx.custom_names:
-        <h3>Alternative names used by contributions</h3>
+        <h3>Contributions</h3>
         <ul>
           <%
             name_query = request.db\
               .query(m.ContributionLanguage)\
               .join(m.CrossgramData)\
-              .filter(m.ContributionLanguage.language_pk == ctx.pk)\
-              .filter(m.ContributionLanguage.custom_language_name != ctx.name)\
-              .order_by(m.ContributionLanguage.custom_language_name)
+              .filter(m.ContributionLanguage.language_pk == ctx.pk)
           %>
           % for contrib_lang in name_query:
-          <li>${contrib_lang.custom_language_name}: ${h.link(request, contrib_lang.contribution)}</li>
+          <li>
+            ${h.link(request, contrib_lang.contribution)}
+            % if contrib_lang.custom_language_name != ctx.name:
+              (Contribution-specific name: ${contrib_lang.custom_language_name})
+            % endif
+          </li>
           % endfor
         </ul>
         % endif
