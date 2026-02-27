@@ -65,11 +65,10 @@ ${h.rendered_sentence(ctx)|n}
 % endif
 % if ctx.references or ctx.source or ctx.source_comment:
 <dt>${_('Source')}:</dt>
-% if ctx.source or ctx.source_comment:
-<dd>${ctx.source or ctx.source_comment}</dd>
-% endif
 % if ctx.references:
 <dd>${h.linked_references(request, ctx)|n}</dd>
+% elif ctx.source_comment:
+<dd>${ctx.source_comment}</dd>
 % endif
 % endif
 </dl>
