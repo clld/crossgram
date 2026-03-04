@@ -228,12 +228,14 @@ def main(_args):
 
     DBSession.flush()
 
-    raw_editors = [
-        ('haspelmathmartin', 'Martin Haspelmath'),
+    editors = [
+        common.Contributor(
+            id='haspelmathmartin',
+            name='Martin Haspelmath',
+            address='MPI-EVA Leipzig',
+            url='https://www.eva.mpg.de/linguistic-and-cultural-evolution/staff/martin-haspelmath')
     ]
-    all_contributors.update(
-        (editor_id, common.Contributor(id=editor_id, name=name))
-        for editor_id, name in raw_editors)
+    all_contributors.update((editor.id, editor) for editor in editors)
     DBSession.add_all(all_contributors.values())
 
     DBSession.flush()
