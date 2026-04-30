@@ -552,6 +552,11 @@ class Constructions(datatables.Units):
                 get_obj=lambda i: i.language)
             return [language, name, desc, examples, contrib]
 
+    def get_options(self):
+        opts = super().get_options()
+        opts['aaSorting'] = []
+        return opts
+
 
 class CParameters(datatables.Unitparameters):
 
@@ -595,6 +600,11 @@ class CParameters(datatables.Unitparameters):
                 get_obj=lambda i: i.contribution,
                 choices=contribs_with_cparam)
             return [details, contrib, name, desc, topics, langcount]
+
+    def get_options(self):
+        opts = super().get_options()
+        opts['aaSorting'] = []
+        return opts
 
 
 class CValues(datatables.Unitvalues):
@@ -686,6 +696,11 @@ class CValues(datatables.Unitvalues):
                 model_col=common.Language.name)
             return [contrib, lang, constr, cparam, cvalue, comment, source]
 
+    def get_options(self):
+        opts = super().get_options()
+        opts['aaSorting'] = []
+        return opts
+
 
 class LParameters(datatables.Parameters):
 
@@ -729,6 +744,11 @@ class LParameters(datatables.Parameters):
                 get_obj=lambda i: i.contribution,
                 choices=contribs_with_lparam)
             return [details, contrib, name, desc, topics, langcount]
+
+    def get_options(self):
+        opts = super().get_options()
+        opts['aaSorting'] = []
+        return opts
 
 
 class LValues(datatables.Values):
@@ -827,6 +847,11 @@ class LValues(datatables.Values):
                 self, 'valueset', bSearchable=False, bSortable=False)
             return [contrib, lang, param, valueset, comment, sources]
 
+    def get_options(self):
+        opts = super().get_options()
+        opts['aaSorting'] = []
+        return opts
+
 
 class Examples(datatables.Sentences):
 
@@ -890,10 +915,9 @@ class Examples(datatables.Sentences):
                 details]
 
     def get_options(self):
-        if self.crossgramdata:
-            return {'aaSorting': [[1, 'asc']]}
-        else:
-            return {}
+        opts = super().get_options()
+        opts['aaSorting'] = [[1, 'asc']] if self.crossgramdata else []
+        return opts
 
 
 class Sources(datatables.Sources):
