@@ -277,18 +277,28 @@ class ParameterTopicsCol(Col):
             for topic in topics)
 
 
-class TopicParametersCol(Col):
-    """Column listing linked parameters for a topic."""
+class TopicLParametersCol(Col):
+    """Column listing linked l-parameters for a topic."""
 
     __kw__ = {'bSearchable': False, 'bSortable': False}
 
     def format(self, item):
         obj = self.get_obj(item)
-        lparameters = (assoc.parameter for assoc in obj.parameter_assocs)
-        cparameters = (assoc.unitparameter for assoc in obj.unitparameter_assocs)
         return '; '.join(
-            link(self.dt.req, parameter, label=parameter.name)
-            for parameter in chain(lparameters, cparameters))
+            link(self.dt.req, assoc.parameter, label=assoc.parameter.name)
+            for assoc in obj.parameter_assocs)
+
+
+class TopicCParametersCol(Col):
+    """Column listing linked c-parameters for a topic."""
+
+    __kw__ = {'bSearchable': False, 'bSortable': False}
+
+    def format(self, item):
+        obj = self.get_obj(item)
+        return '; '.join(
+            link(self.dt.req, assoc.unitparameter, label=assoc.unitparameter.name)
+            for assoc in obj.unitparameter_assocs)
 
 
 def object_examples(contribution, obj):
@@ -994,7 +1004,8 @@ class Topics(DataTable):
             # TODO(johannes): link to grammaticon
             Col(self, 'grammacode'),
             Col(self, 'description'),
-            TopicParametersCol(self, 'parameters', sTitle='Parameters'),
+            TopicLParametersCol(self, 'lparameters', sTitle='L-Parameters'),
+            TopicCParametersCol(self, 'cparameters', sTitle='C-Parameters'),
         ]
 
 
