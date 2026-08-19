@@ -301,6 +301,15 @@ class TopicCParametersCol(Col):
             for assoc in obj.unitparameter_assocs)
 
 
+class GrammaticonCol(Col):
+    def format(self, item):
+        item = self.get_obj(item)
+        if item.grammaticon_url:
+            return external_link(item.grammaticon_url)
+        else:
+            return ''
+
+
 def object_examples(contribution, obj):
     return [
         example
@@ -1001,11 +1010,10 @@ class Topics(DataTable):
     def col_defs(self):
         return [
             LinkCol(self, 'name', sTitle='Topic'),
-            # TODO(johannes): link to grammaticon
-            Col(self, 'grammacode'),
             Col(self, 'description'),
             TopicLParametersCol(self, 'lparameters', sTitle='L-Parameters'),
             TopicCParametersCol(self, 'cparameters', sTitle='C-Parameters'),
+            GrammaticonCol(self, 'grammaticon', sTitle='Grammaticon URL'),
         ]
 
 

@@ -162,6 +162,7 @@ class Topic(Base, IdNameDescriptionMixin):
     quotation = Column(Unicode)
     comment = Column(Unicode)
     grammacode = Column(Unicode)
+    grammaticon_url = Column(Unicode)
     wikipedia_counterpart = Column(Unicode)
     wikipedia_url = Column(Unicode)
     sil_counterpart = Column(Unicode)

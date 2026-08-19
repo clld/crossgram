@@ -262,6 +262,8 @@ def main(_args):
             name=topic['Name'],
             description=topic.get('Description'),
             grammacode=topic.get('Grammacode'),
+            grammaticon_url='https://grammaticon.clld.org/concepts/{}'.format(
+                topic['ID']),
             comment=topic.get('Comment'),
             quotation=topic.get('Quotation'),
             wikipedia_counterpart=topic.get('Wikipedia_Counterpart'),

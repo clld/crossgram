@@ -14,9 +14,8 @@
 % if ctx.grammacode or ctx.sil_counterpart or ctx.wikipedia_counterpart:
 <dl>
   % if ctx.grammacode:
-  <dt>Grammacode</dt>
-  ## TODO(johannes): link to grammaticon
-  <dd>${ctx.grammacode}</dd>
+  <dt>Grammaticon URL</dt>
+  <dd>${h.external_link(ctx.grammaticon_url)}</dd>
   % endif
   % if ctx.sil_counterpart:
   <dt>SIL counter-part</dt>
