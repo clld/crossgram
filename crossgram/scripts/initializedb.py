@@ -292,9 +292,6 @@ def main(_args):
         print('Loading submission', sid, '...')
 
         contrib_md = jsonlib.load(contrib_dir / 'md.json')
-        if contrib_md.get('hide'):
-            print('... but', sid, "doesn't want to be shown")
-            continue
 
         cldfbench_path = download_data(sid, contrib_md, cache_dir)
         if not cldfbench_path.exists():
