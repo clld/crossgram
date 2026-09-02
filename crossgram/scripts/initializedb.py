@@ -29,8 +29,10 @@ from crossgram.lib.horrible_denormaliser import BlockEncoder
 ISOLATES_ICON = 'cff6600'
 
 
-def download_data(sid, contrib_md, cache_dir):
-    if contrib_md.get('doi'):
+def download_data(sid, contrib_md, cache_dir, internal):
+    # on the public instance, use the released version by default
+    # on the internal test instance, use the git version (or a local one)
+    if not internal and contrib_md.get('doi'):
         doi = contrib_md['doi']
         path = cache_dir / f'{sid}-{slug(doi)}'
         if not path.exists():
@@ -273,27 +275,29 @@ def main(_args):
         for topic in csv_topics}
     DBSession.add_all(topics.values())
 
-    if internal:
-        submissions_path = internal_repo / 'submissions-internal'
-    else:
-        submissions_path = internal_repo / 'submissions'
-
     # :D
     DBSession.execute(sqlalchemy.text("""
         ALTER TABLE parameter DROP CONSTRAINT parameter_name_key;
     """))
 
+    submissions_path = internal_repo / 'submissions'
     for contrib_dir in submissions_path.iterdir():
         if not contrib_dir.is_dir():
             continue
         if which_submission != 'all' and which_submission != contrib_dir.name:
             continue
-        sid = contrib_dir.name
-        print('Loading submission', sid, '...')
 
+        sid = contrib_dir.name
         contrib_md = jsonlib.load(contrib_dir / 'md.json')
 
-        cldfbench_path = download_data(sid, contrib_md, cache_dir)
+        if internal and not contrib_md.get('internal-app'):
+            continue
+        if not internal and not contrib_md.get('external-app'):
+            continue
+
+        print('Loading submission', sid, '...')
+
+        cldfbench_path = download_data(sid, contrib_md, cache_dir, internal)
         if not cldfbench_path.exists():
             print('could not find folder', str(cldfbench_path))
             continue
