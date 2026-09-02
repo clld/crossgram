@@ -1010,7 +1010,7 @@ class Topics(DataTable):
     def col_defs(self):
         return [
             LinkCol(self, 'name', sTitle='Topic'),
-            Col(self, 'description'),
+            Col(self, 'description', sTitle='Grammaticon Description'),
             TopicLParametersCol(self, 'lparameters', sTitle='L-Parameters'),
             TopicCParametersCol(self, 'cparameters', sTitle='C-Parameters'),
             GrammaticonCol(self, 'grammaticon', sTitle='Grammaticon URL'),
