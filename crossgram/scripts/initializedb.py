@@ -23,52 +23,9 @@ from pyglottolog import Glottolog
 import crossgram
 from crossgram import models
 from crossgram.lib.cldf import CLDFBenchSubmission
-from crossgram.lib.cldf_zenodo import download_from_doi
 from crossgram.lib.horrible_denormaliser import BlockEncoder
 
 ISOLATES_ICON = 'cff6600'
-
-
-def download_data(sid, contrib_md, cache_dir, internal):
-    # on the public instance, use the released version by default
-    # on the internal test instance, use the git version (or a local one)
-    if not internal and contrib_md.get('doi'):
-        doi = contrib_md['doi']
-        path = cache_dir / f'{sid}-{slug(doi)}'
-        if not path.exists():
-            print(' * downloading dataset from Zenodo; doi:', doi)
-            download_from_doi(doi, path)
-            print('   done.')
-        return path
-
-    elif contrib_md.get('repo'):
-        repo = contrib_md.get('repo')
-        checkout = contrib_md.get('checkout')
-        if checkout:
-            # specific commit/tag/branch
-            path = cache_dir / f'{sid}-{slug(checkout)}'
-            if not path.exists():
-                print(' * cloning', repo, 'into', path, '...')
-                git.Git().clone(repo, path)
-                print('   done.')
-                print(' * checking out commit', checkout, '...')
-                git.Git(str(path)).checkout(checkout)
-                print('   done.')
-        else:
-            # latest commit on the default branch
-            path = cache_dir / sid
-            if not path.exists():
-                print(' * cloning', repo, 'into', path, '...')
-                git.Git().clone(repo, path)
-                print('   done.')
-            else:
-                print(' * pulling latest commit')
-                git.Git(str(path)).pull()
-                print('   done.')
-        return path
-
-    else:
-        return cache_dir / sid
 
 
 def maybe_read_file(file_path):
@@ -235,7 +192,7 @@ def main(_args):
             id='haspelmathmartin',
             name='Martin Haspelmath',
             address='MPI-EVA Leipzig',
-            url='https://www.eva.mpg.de/linguistic-and-cultural-evolution/staff/martin-haspelmath')
+            url='https://www.eva.mpg.de/linguistic-and-cultural-evolution/staff/martin-haspelmath'),
     ]
     all_contributors.update((editor.id, editor) for editor in editors)
     DBSession.add_all(all_contributors.values())
@@ -297,13 +254,57 @@ def main(_args):
 
         print('Loading submission', sid, '...')
 
-        cldfbench_path = download_data(sid, contrib_md, cache_dir, internal)
+        doi = contrib_md.get('doi')
+        if doi:
+            print(' * getting metadata from zenodo')
+            # Why don't we have the version noted down in the datasets
+            # themselves...?
+            zenodo_record = cldfzenodo.API.get_record(doi=doi)
+            version = zenodo_record.version
+        else:
+            zenodo_record = None
+            version = None
+
+        # on the public instance, use the released version by default
+        # on the internal test instance, use the git version (or a local one)
+        if not internal and zenodo_record:
+            assert doi
+            cldfbench_path = cache_dir / f'{sid}-{slug(doi)}'
+            if not cldfbench_path.exists():
+                print(' * downloading dataset from Zenodo; doi:', doi)
+                zenodo_record.download(cldfbench_path)
+                print('   done.')
+
+        elif contrib_md.get('repo'):
+            repo = contrib_md.get('repo')
+            checkout = contrib_md.get('checkout')
+            if checkout:
+                # specific commit/tag/branch
+                cldfbench_path = cache_dir / f'{sid}-{slug(checkout)}'
+                if not cldfbench_path.exists():
+                    print(' * cloning', repo, 'into', cldfbench_path, '...')
+                    git.Git().clone(repo, cldfbench_path)
+                    print('   done.')
+                    print(' * checking out commit', checkout, '...')
+                    git.Git(str(cldfbench_path)).checkout(checkout)
+                    print('   done.')
+            else:
+                # latest commit on the default branch
+                cldfbench_path = cache_dir / sid
+                if not cldfbench_path.exists():
+                    print(' * cloning', repo, 'into', cldfbench_path, '...')
+                    git.Git().clone(repo, cldfbench_path)
+                    print('   done.')
+                else:
+                    print(' * pulling latest commit')
+                    git.Git(str(cldfbench_path)).pull()
+                    print('   done.')
+        else:
+            cldfbench_path = cache_dir / sid
+
         if not cldfbench_path.exists():
             print('could not find folder', str(cldfbench_path))
             continue
-
-        doi = contrib_md.get('doi')
-        version = cldfzenodo.API.get_record(doi=doi).version if doi else None
 
         submission = CLDFBenchSubmission.load(cldfbench_path, contrib_md)
 

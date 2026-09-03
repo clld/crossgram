@@ -1,4 +1,3 @@
-from itertools import chain
 from functools import partial
 
 from clld.db.meta import DBSession
