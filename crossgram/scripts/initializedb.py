@@ -206,7 +206,7 @@ def main(_args):
             ord=number)
         for number, contributor in enumerate(all_contributors.values(), 1))
 
-    internal_repo = pathlib.Path('../../crossgram/crossgram-internal')
+    internal_repo = pathlib.Path('../crossgram-internal')
     cache_dir = internal_repo / 'datasets'
     cache_dir.mkdir(exist_ok=True)
 
